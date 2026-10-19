@@ -509,18 +509,65 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5282b4a48f425b4b93e5aeb35bc1964, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game
-  money: 150
-  wallCost: 10
-  towerCost: 40
-  killReward: 3
+  litMaterial: {fileID: 2100000, guid: 1bae3b729ad7c0d488d0679196adb1ec, type: 2}
+  lineMaterial: {fileID: 2100000, guid: 41be4e6fdd81cb1469e4c6d0242133b9, type: 2}
+  startWood: 60
+  startSupplies: 6
+  dawnWood: 10
+  dawnSuppliesBase: 3
+  gridWidth: 21
+  gridHeight: 21
+  maxGridDimension: 41
+  gridCellSize: 2
+  pathBreakCost: 10
+  spawnBuildClearance: 1
+  coreBuildClearance: 0
+  spawnEdges: 15
+  buildGridWidth: 0
+  buildGridHeight: 0
+  buildGridOffset: {x: 0, y: 0}
+  cameraPanSpeed: 16
+  cameraEdgeSize: 28
+  coreHealth: 300
+  eventLogEntries: 8
+  showEventLog: 1
+  scenario: {fileID: 0}
+  commonEnemy:
+    maxHealth: 25
+    speed: 3.2
+    damage: 4
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 10
+    scale: {x: 0.9, y: 0.9, z: 0.9}
+  tankEnemy:
+    maxHealth: 140
+    speed: 2.2
+    damage: 14
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 10
+    scale: {x: 1.8, y: 0.9, z: 1.8}
+  initialGroups: 1
+  groupsPerRounds: 2
+  maxGroups: 4
+  baseCommonEnemies: 4
+  commonsPerRound: 1
+  tankEveryRounds: 2
+  hunterBaseChance: 0.3
+  hunterChancePerRound: 0.05
+  hunterChanceCap: 0.6
+  spawnInterval: 0.4
+  groupInterval: 3
+  groupMinSize: 5
+  loneWolfChance: 0.1
+  tacticalGroupChance: 0.7
   round: 0
   killed: 0
   deserted: 0
   night: 0
   lost: 0
   core: {fileID: 0}
-  litMaterial: {fileID: 2100000, guid: 1bae3b729ad7c0d488d0679196adb1ec, type: 2}
-  lineMaterial: {fileID: 2100000, guid: 41be4e6fdd81cb1469e4c6d0242133b9, type: 2}
 --- !u!1 &1706826090
 GameObject:
   m_ObjectHideFlags: 0

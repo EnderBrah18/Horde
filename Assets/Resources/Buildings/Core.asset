@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
   m_Name: Core
   m_EditorClassIdentifier: Assembly-CSharp::BuildingData
-  displayName: "Constru\xE7\xE3o"
+  displayName: Core
   description: 
   order: 0
-  kind: 0
-  shape: 3
-  color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  kind: 2
+  shape: 1
+  color: {r: 0.7075472, g: 0.08343716, b: 0.08343716, a: 1}
   size: {x: 0.95, y: 1.5, z: 0.95}
   woodCost: 5
   suppliesCost: 0
   maxHealth: 60
+  towerRange: 12
+  towerDamage: 7
+  towerCooldown: 0.45
   produces: 0
   amount: 0
   cycleSeconds: 5

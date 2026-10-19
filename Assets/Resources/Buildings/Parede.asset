@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
   m_Name: Parede
   m_EditorClassIdentifier: Assembly-CSharp::BuildingData
-  displayName: "Constru\xE7\xE3o"
+  displayName: Parede
   description: 
   order: 0
   kind: 0
@@ -22,6 +22,9 @@ MonoBehaviour:
   woodCost: 5
   suppliesCost: 0
   maxHealth: 60
+  towerRange: 12
+  towerDamage: 7
+  towerCooldown: 0.45
   produces: 0
   amount: 0
   cycleSeconds: 5
