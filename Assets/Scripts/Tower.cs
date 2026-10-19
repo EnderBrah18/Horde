@@ -15,7 +15,8 @@ public class Tower : MonoBehaviour
         lr = gameObject.AddComponent<LineRenderer>();
         lr.positionCount = 2;
         lr.startWidth = lr.endWidth = 0.12f;
-        lr.material = new Material(Shader.Find("Sprites/Default"));
+        if (Game.LineMat != null) lr.material = new Material(Game.LineMat);
+        else lr.material = new Material(Shader.Find("Sprites/Default"));
         lr.startColor = lr.endColor = new Color(0.6f, 1f, 1f);
         lr.enabled = false;
     }

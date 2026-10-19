@@ -52,7 +52,6 @@ public class Enemy : MonoBehaviour
     {
         if (group != null) group.Remove(this);
         Game.I.killed++;
-        Game.I.money += Game.I.killReward;
     }
 
     public void Desert()
@@ -82,12 +81,14 @@ public class Enemy : MonoBehaviour
                 break;
             case EState.March:
                 dir = MarchDir();
+                // Keep attackers stationary while they are in range of their target.
+                if (dir.sqrMagnitude > 0.0001f) dir += Separation() * 1.5f;
                 break;
             case EState.Flee:
                 dir = FleeDir(); mult = 1.2f;
                 break;
         }
-        dir += Separation() * 1.5f;
+        if (state != EState.March) dir += Separation() * 1.5f;
         Move(dir, mult, dt);
     }
 
@@ -118,20 +119,8 @@ public class Enemy : MonoBehaviour
 
         Vector3 d;
         if (t != null && t.kind == StructureKind.Tower)
-        {
-            d = t.transform.position - pos;     // Hunter sai da rota e vai atrás da torre
-            d.y = 0f;
-            d.Normalize();
-        }
+            d = GridWorld.I.FlowDir(pos, t.cell); // Hunter desvia de construções até a torre
         else d = GridWorld.I.FlowDir(pos);
-
-        // Coesão: seguidores voltam para perto do líder
-        if (group != null && group.Leader != null && group.Leader != this)
-        {
-            Vector3 to = group.Leader.transform.position - pos;
-            to.y = 0f;
-            if (to.magnitude > 6f) d += to.normalized;
-        }
         return d;
     }
 
@@ -191,10 +180,25 @@ public class Enemy : MonoBehaviour
         var s = g.Get(c);
         if (s != null)
         {
-            if (state == EState.March) { TryAttack(s); return; }   // algo bloqueia: bate até abrir
-            Vector3 nx = new Vector3(np.x, pos.y, pos.z);
-            Vector3 nz = new Vector3(pos.x, pos.y, np.z);
-            if (Free(nx)) np = nx; else if (Free(nz)) np = nz; else return;
+            if (state == EState.March)
+            {
+                // Separation can push an enemy off its route. Recheck the route before
+                // deciding that the blocking structure must be attacked.
+                Vector3 routeDir = MarchDir();
+                if (routeDir.sqrMagnitude <= 0.0001f) return;
+                Vector3 routePos = pos + routeDir.normalized * speed * mult * dt;
+                var routeCell = g.WorldToCell(routePos);
+                var routeBlocker = g.Get(routeCell);
+                if (routeBlocker != null) { TryAttack(routeBlocker); return; }
+                np = routePos;
+                dir = routeDir;
+            }
+            else
+            {
+                Vector3 nx = new Vector3(np.x, pos.y, pos.z);
+                Vector3 nz = new Vector3(pos.x, pos.y, np.z);
+                if (Free(nx)) np = nx; else if (Free(nz)) np = nz; else return;
+            }
         }
 
         transform.position = np;

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Grid no plano XZ (Y = altura) + campo de fluxo (BFS a partir do Coração).
+// Grid no plano XZ (Y = altura) + campo de fluxo (Dijkstra a partir do Coração).
 public class GridWorld : MonoBehaviour
 {
     public static GridWorld I;
@@ -14,14 +14,17 @@ public class GridWorld : MonoBehaviour
 
     Structure[,] cells;
     int[,] dist;
+    readonly Dictionary<Vector2Int, int[,]> targetDistances = new Dictionary<Vector2Int, int[,]>();
 
     static readonly Vector2Int[] D4 =
         { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
-    static readonly Vector2Int[] D8 =
+    struct QueueNode
     {
-        new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1),
-        new Vector2Int(1, 1), new Vector2Int(1, -1), new Vector2Int(-1, 1), new Vector2Int(-1, -1)
-    };
+        public Vector2Int cell;
+        public int cost;
+
+        public QueueNode(Vector2Int cell, int cost) { this.cell = cell; this.cost = cost; }
+    }
 
     public Vector2Int CoreCell => new Vector2Int(width / 2, height / 2);
 
@@ -44,7 +47,11 @@ public class GridWorld : MonoBehaviour
     }
 
     public Structure Get(Vector2Int c) => InBounds(c) ? cells[c.x, c.y] : null;
-    public void Set(Vector2Int c, Structure s) { cells[c.x, c.y] = s; }
+    public void Set(Vector2Int c, Structure s)
+    {
+        cells[c.x, c.y] = s;
+        targetDistances.Clear();
+    }
 
     public void Clear(Structure s)
     {
@@ -56,32 +63,40 @@ public class GridWorld : MonoBehaviour
     }
 
     // Campo de fluxo com custos: entrar numa célula custa 1, e custa mais (breakCost) se houver construção nela.
+    // Dijkstra é necessário porque os pesos das células não são todos iguais.
     public void Recalc(Vector2Int? extra = null)
     {
+        targetDistances.Clear();
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
                 dist[x, y] = int.MaxValue;
 
-        var q = new Queue<Vector2Int>();
+        var open = new List<QueueNode>();
         var start = CoreCell;
         dist[start.x, start.y] = 0;
-        q.Enqueue(start);
+        Push(open, new QueueNode(start, 0));
+        int structureCost = Mathf.Max(0, breakCost);
 
-        while (q.Count > 0)
+        while (open.Count > 0)
         {
-            var c = q.Dequeue();
+            var node = Pop(open);
+            var c = node.cell;
+            if (node.cost != dist[c.x, c.y]) continue; // entrada antiga na fila
+
             foreach (var d in D4)
             {
                 var n = c + d;
                 if (!InBounds(n)) continue;
 
-                bool blocked = cells[n.x, n.y] != null || (extra.HasValue && extra.Value == n);
-                int nd = dist[c.x, c.y] + 1 + (blocked ? breakCost : 0);
+                // A busca parte do destino. Ao expandir para trás, o custo da aresta
+                // é o custo de entrar em c no trajeto normal de n até o Coração.
+                bool blocked = cells[c.x, c.y] != null || (extra.HasValue && extra.Value == c);
+                int nd = node.cost + 1 + (blocked ? structureCost : 0);
 
                 if (nd < dist[n.x, n.y])
                 {
                     dist[n.x, n.y] = nd;
-                    q.Enqueue(n);
+                    Push(open, new QueueNode(n, nd));
                 }
             }
         }
@@ -89,32 +104,110 @@ public class GridWorld : MonoBehaviour
 
     public bool Reachable(Vector2Int c) => InBounds(c) && dist[c.x, c.y] != int.MaxValue;
 
-    // Direção desejada (a "bússola"): aponta para o vizinho com menor distância ao Coração.
+    // Direção desejada (a "bússola"): segue o vizinho cardinal com menor custo até o Coração.
     public Vector3 FlowDir(Vector3 wp)
+    {
+        return FlowDir(wp, dist);
+    }
+
+    // Hunters use the same weighted routing toward a tower instead of walking in a straight line through walls.
+    public Vector3 FlowDir(Vector3 wp, Vector2Int target)
+    {
+        if (!InBounds(target)) return FlowDir(wp);
+        if (!targetDistances.TryGetValue(target, out var targetDist))
+        {
+            targetDist = CalculateDistances(target);
+            targetDistances[target] = targetDist;
+        }
+        return FlowDir(wp, targetDist);
+    }
+
+    Vector3 FlowDir(Vector3 wp, int[,] distances)
     {
         var c = WorldToCell(wp);
         Vector3 toCore = CellToWorld(CoreCell) - wp;
         toCore.y = 0f;
-        if (!InBounds(c) || dist[c.x, c.y] == int.MaxValue) return toCore.normalized;
+        if (!InBounds(c) || distances[c.x, c.y] == int.MaxValue) return toCore.normalized;
 
-        float best = dist[c.x, c.y];
+        int best = distances[c.x, c.y];
         var pick = c;
-        foreach (var d in D8)
+        foreach (var d in D4)
         {
             var n = c + d;
-            if (!InBounds(n) || dist[n.x, n.y] == int.MaxValue) continue;
-            bool diag = d.x != 0 && d.y != 0;
-            if (diag)
-            {
-                if (cells[n.x, n.y] != null) continue;
-                if (cells[c.x + d.x, c.y] != null || cells[c.x, c.y + d.y] != null) continue;
-            }
-            float s = dist[n.x, n.y] + (diag ? 0.5f : 0f);
-            if (s < best) { best = s; pick = n; }
+            if (!InBounds(n) || distances[n.x, n.y] == int.MaxValue) continue;
+            int s = distances[n.x, n.y] + 1 + (cells[n.x, n.y] != null ? Mathf.Max(0, breakCost) : 0);
+            if (s <= best) { best = s; pick = n; }
         }
         if (pick == c) return Vector3.zero;
         var t = CellToWorld(pick) - wp;
         t.y = 0f;
         return t.normalized;
+    }
+
+    int[,] CalculateDistances(Vector2Int start)
+    {
+        var distances = new int[width, height];
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                distances[x, y] = int.MaxValue;
+
+        var open = new List<QueueNode>();
+        distances[start.x, start.y] = 0;
+        Push(open, new QueueNode(start, 0));
+        int structureCost = Mathf.Max(0, breakCost);
+
+        while (open.Count > 0)
+        {
+            var node = Pop(open);
+            var c = node.cell;
+            if (node.cost != distances[c.x, c.y]) continue;
+
+            foreach (var d in D4)
+            {
+                var n = c + d;
+                if (!InBounds(n)) continue;
+                int nd = node.cost + 1 + (cells[c.x, c.y] != null ? structureCost : 0);
+                if (nd >= distances[n.x, n.y]) continue;
+                distances[n.x, n.y] = nd;
+                Push(open, new QueueNode(n, nd));
+            }
+        }
+        return distances;
+    }
+
+    static void Push(List<QueueNode> heap, QueueNode node)
+    {
+        int i = heap.Count;
+        heap.Add(node);
+        while (i > 0)
+        {
+            int parent = (i - 1) / 2;
+            if (heap[parent].cost <= node.cost) break;
+            heap[i] = heap[parent];
+            i = parent;
+        }
+        heap[i] = node;
+    }
+
+    static QueueNode Pop(List<QueueNode> heap)
+    {
+        QueueNode first = heap[0];
+        QueueNode last = heap[heap.Count - 1];
+        heap.RemoveAt(heap.Count - 1);
+        if (heap.Count == 0) return first;
+
+        int i = 0;
+        while (true)
+        {
+            int left = i * 2 + 1;
+            if (left >= heap.Count) break;
+            int right = left + 1;
+            int child = right < heap.Count && heap[right].cost < heap[left].cost ? right : left;
+            if (heap[child].cost >= last.cost) break;
+            heap[i] = heap[child];
+            i = child;
+        }
+        heap[i] = last;
+        return first;
     }
 }
