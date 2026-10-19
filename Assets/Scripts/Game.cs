@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using Unity.Cinemachine;
 
 // Coloque este script em UM GameObject vazio na cena. Ele cria todo o resto.
 public class Game : MonoBehaviour
@@ -20,6 +21,33 @@ public class Game : MonoBehaviour
     [Header("Amanhecer (temporário, até os círculos mágicos)")]
     public int dawnWood = 10;
     public int dawnSuppliesBase = 3;
+
+    [Header("Mapa de playtest")]
+    [Range(11, 61)] public int gridWidth = 21;
+    [Range(11, 61)] public int gridHeight = 21;
+    [Range(21, 61)] public int maxGridDimension = 41;
+    [Min(0.1f)] public float gridCellSize = 2f;
+    [Min(0)] public int pathBreakCost = 10;
+    [Min(0)] public int spawnBuildClearance = 1;
+    [Min(0)] public int coreBuildClearance;
+    public SpawnEdges spawnEdges = SpawnEdges.All;
+
+    [Header("Limites do grid de construção")]
+    [Tooltip("0 usa a largura total do mapa. Valores menores centralizam uma área construída menor.")]
+    [Min(0)] public int buildGridWidth;
+    [Tooltip("0 usa a altura total do mapa. Valores menores centralizam uma área construída menor.")]
+    [Min(0)] public int buildGridHeight;
+    public Vector2Int buildGridOffset;
+
+    [Header("Câmera de playtest")]
+    [Min(1f)] public float cameraPanSpeed = 16f;
+    [Min(1f)] public float cameraEdgeSize = 28f;
+
+    [Header("Playtest")]
+    [Min(1f)] public float coreHealth = 300f;
+    [Min(1)] public int eventLogEntries = 8;
+    public bool showEventLog = true;
+    public PlaytestScenario scenario;
 
     [Header("Balanceamento de inimigos")]
     public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings();
@@ -59,12 +87,32 @@ public class Game : MonoBehaviour
     public Wallet wallet = new Wallet();
     public Structure core;
 
+    public event System.Action<GameplayEvent> GameplayEventRaised;
+
+    static string selectedScenarioName;
+    readonly List<PlaytestScenario> scenarios = new List<PlaytestScenario>();
+    readonly List<GameplayEvent> recentEvents = new List<GameplayEvent>();
+    bool scenarioChangePending;
+
     void OnValidate()
     {
         startWood = Mathf.Max(0, startWood);
         startSupplies = Mathf.Max(0, startSupplies);
         dawnWood = Mathf.Max(0, dawnWood);
         dawnSuppliesBase = Mathf.Max(0, dawnSuppliesBase);
+        maxGridDimension = Mathf.Clamp(maxGridDimension, 21, 61);
+        gridWidth = Mathf.Clamp(gridWidth, 11, maxGridDimension);
+        gridHeight = Mathf.Clamp(gridHeight, 11, maxGridDimension);
+        gridCellSize = Mathf.Max(0.1f, gridCellSize);
+        pathBreakCost = Mathf.Max(0, pathBreakCost);
+        spawnBuildClearance = Mathf.Max(0, spawnBuildClearance);
+        coreBuildClearance = Mathf.Max(0, coreBuildClearance);
+        buildGridWidth = Mathf.Max(0, buildGridWidth);
+        buildGridHeight = Mathf.Max(0, buildGridHeight);
+        cameraPanSpeed = Mathf.Max(1f, cameraPanSpeed);
+        cameraEdgeSize = Mathf.Max(1f, cameraEdgeSize);
+        coreHealth = Mathf.Max(1f, coreHealth);
+        eventLogEntries = Mathf.Max(1, eventLogEntries);
         initialGroups = Mathf.Max(0, initialGroups);
         groupsPerRounds = Mathf.Max(1, groupsPerRounds);
         maxGroups = Mathf.Max(1, maxGroups);
@@ -99,6 +147,7 @@ public class Game : MonoBehaviour
     public static Material LineMat;
 
     GridWorld grid;
+    CinemachineCamera virtualCamera;
     readonly List<Vector2Int> spawns = new List<Vector2Int>();
     List<BuildingData> menu = new List<BuildingData>();
     int selected;
@@ -124,10 +173,20 @@ public class Game : MonoBehaviour
     void Awake()
     {
         I = this;
+        virtualCamera = FindFirstObjectByType<CinemachineCamera>();
         baseMat = litMaterial;
         LineMat = lineMaterial;
         Enemy.All.Clear();
         Structure.All.Clear();
+
+        scenarios.AddRange(Resources.LoadAll<PlaytestScenario>("PlaytestScenarios"));
+        scenarios.Sort((a, b) => string.Compare(a.displayName, b.displayName, System.StringComparison.Ordinal));
+        if (!string.IsNullOrEmpty(selectedScenarioName))
+        {
+            var selectedScenario = scenarios.Find(s => s.name == selectedScenarioName);
+            if (selectedScenario != null) scenario = selectedScenario;
+        }
+        if (scenario != null) scenario.ApplyTo(this);
 
         wallet.Wood = startWood;
         wallet.Supplies = startSupplies;
@@ -139,6 +198,7 @@ public class Game : MonoBehaviour
             Say("Nenhuma construção encontrada. Rode: Tools > Village > Create Default Buildings", 600f);
 
         grid = gameObject.AddComponent<GridWorld>();
+        grid.Configure(gridWidth, gridHeight, gridCellSize, pathBreakCost);
         BuildWorld();
     }
 
@@ -162,14 +222,17 @@ public class Game : MonoBehaviour
         m.mainTextureScale = new Vector2(grid.width / 2f, grid.height / 2f);
         m.color = Color.white;
 
-        // Spawns no meio de cada borda
-        spawns.Add(new Vector2Int(grid.width / 2, 0));
-        spawns.Add(new Vector2Int(grid.width / 2, grid.height - 1));
-        spawns.Add(new Vector2Int(0, grid.height / 2));
-        spawns.Add(new Vector2Int(grid.width - 1, grid.height / 2));
+        // Entradas configuráveis para variar as estratégias testadas no mapa.
+        if ((spawnEdges & SpawnEdges.North) != 0) spawns.Add(new Vector2Int(grid.width / 2, grid.height - 1));
+        if ((spawnEdges & SpawnEdges.South) != 0) spawns.Add(new Vector2Int(grid.width / 2, 0));
+        if ((spawnEdges & SpawnEdges.West) != 0) spawns.Add(new Vector2Int(0, grid.height / 2));
+        if ((spawnEdges & SpawnEdges.East) != 0) spawns.Add(new Vector2Int(grid.width - 1, grid.height / 2));
+        if (spawns.Count == 0) spawns.Add(new Vector2Int(grid.width / 2, 0));
         foreach (var s in spawns)
             Prim(PrimitiveType.Cube, grid.CellToWorld(s) + Vector3.up * 0.03f,
                  new Vector3(cs * 0.95f, 0.05f, cs * 0.95f), new Color(0.6f, 0.1f, 0.1f));
+
+        DrawBuildGridBoundary();
 
         // Coração (dados criados em código; não aparece no menu)
         var cd = ScriptableObject.CreateInstance<BuildingData>();
@@ -178,7 +241,7 @@ public class Game : MonoBehaviour
         cd.shape = PrimitiveType.Cube;
         cd.color = new Color(0.2f, 0.4f, 1f);
         cd.size = new Vector3(0.9f, 1.8f, 0.9f);
-        cd.maxHealth = 300f;
+        cd.maxHealth = coreHealth;
         core = MakeStructure(cd, grid.CoreCell);
         core.health.Died += _ => lost = true;
 
@@ -215,7 +278,19 @@ public class Game : MonoBehaviour
         s.cell = cell;
         s.health = h;
         s.data = d;
+        h.Damaged += (health, amount) => RaiseGameplayEvent(GameplayEventType.StructureAttacked, go, amount,
+            $"{d.displayName} recebeu {amount:0.#} dano ({health.current:0.#}/{health.max:0.#} vida)");
+        h.Died += _ =>
+        {
+            RaiseGameplayEvent(GameplayEventType.StructureDestroyed, go, 0f, $"{d.displayName} foi destruída");
+            if (d.kind == StructureKind.Core)
+            {
+                RaiseGameplayEvent(GameplayEventType.CoreDestroyed, go, 0f, "O Coração foi destruído");
+                lost = true;
+            }
+        };
         grid.Set(cell, s);
+        RaiseGameplayEvent(GameplayEventType.StructureBuilt, go, 0f, $"Construída: {d.displayName}");
         return s;
     }
 
@@ -258,12 +333,17 @@ public class Game : MonoBehaviour
         if (kb.rKey.wasPressedThisFrame)
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
 
+        if (kb.f3Key.wasPressedThisFrame) showEventLog = !showEventLog;
+        if (kb.f1Key.wasPressedThisFrame) SelectNextScenario();
+
         if (msgTimer > 0f) { msgTimer -= Time.deltaTime; if (msgTimer <= 0f) msg = ""; }
 
         if (lost) { cursor.SetActive(false); return; }
 
         for (int i = 0; i < menu.Count && i < 9; i++)
             if (kb[Key.Digit1 + i].wasPressedThisFrame) selected = i;
+
+        UpdateCameraPan(mouse);
 
         if (kb.spaceKey.wasPressedThisFrame && !night) StartCoroutine(RunNight());
 
@@ -290,9 +370,84 @@ public class Game : MonoBehaviour
     bool CellFree(Vector2Int c)
     {
         if (!grid.InBounds(c) || grid.Get(c) != null) return false;
+        if (!InBuildGrid(c)) return false;
         foreach (var s in spawns)
-            if (Mathf.Abs(s.x - c.x) <= 1 && Mathf.Abs(s.y - c.y) <= 1) return false;   // zona de spawn
+            if (Mathf.Abs(s.x - c.x) <= spawnBuildClearance && Mathf.Abs(s.y - c.y) <= spawnBuildClearance) return false;
+        if (Mathf.Abs(grid.CoreCell.x - c.x) <= coreBuildClearance &&
+            Mathf.Abs(grid.CoreCell.y - c.y) <= coreBuildClearance) return false;
         return true;
+    }
+
+    bool InBuildGrid(Vector2Int c)
+    {
+        int width = buildGridWidth <= 0 ? grid.width : Mathf.Min(buildGridWidth, grid.width);
+        int height = buildGridHeight <= 0 ? grid.height : Mathf.Min(buildGridHeight, grid.height);
+        int minX = Mathf.Clamp((grid.width - width) / 2 + buildGridOffset.x, 0, grid.width - width);
+        int minY = Mathf.Clamp((grid.height - height) / 2 + buildGridOffset.y, 0, grid.height - height);
+        return c.x >= minX && c.x < minX + width && c.y >= minY && c.y < minY + height;
+    }
+
+    void DrawBuildGridBoundary()
+    {
+        int width = buildGridWidth <= 0 ? grid.width : Mathf.Min(buildGridWidth, grid.width);
+        int height = buildGridHeight <= 0 ? grid.height : Mathf.Min(buildGridHeight, grid.height);
+        if (width == grid.width && height == grid.height && buildGridOffset == Vector2Int.zero) return;
+
+        int minX = Mathf.Clamp((grid.width - width) / 2 + buildGridOffset.x, 0, grid.width - width);
+        int minY = Mathf.Clamp((grid.height - height) / 2 + buildGridOffset.y, 0, grid.height - height);
+        float half = grid.cellSize * 0.5f;
+        float left = grid.CellToWorld(new Vector2Int(minX, minY)).x - half;
+        float right = grid.CellToWorld(new Vector2Int(minX + width - 1, minY)).x + half;
+        float bottom = grid.CellToWorld(new Vector2Int(minX, minY)).z - half;
+        float top = grid.CellToWorld(new Vector2Int(minX, minY + height - 1)).z + half;
+        float y = grid.transform.position.y + 0.12f;
+
+        var border = new GameObject("BuildGridBoundary").AddComponent<LineRenderer>();
+        border.useWorldSpace = true;
+        border.loop = true;
+        border.positionCount = 4;
+        border.startWidth = border.endWidth = 0.08f;
+        border.startColor = border.endColor = new Color(0.35f, 1f, 0.55f, 0.9f);
+        border.material = lineMaterial != null ? new Material(lineMaterial) : new Material(Shader.Find("Sprites/Default"));
+        border.SetPositions(new[]
+        {
+            new Vector3(left, y, bottom), new Vector3(right, y, bottom),
+            new Vector3(right, y, top), new Vector3(left, y, top)
+        });
+    }
+
+    void UpdateCameraPan(Mouse mouse)
+    {
+        var cam = Camera.main;
+        if (cam == null || grid == null) return;
+
+        Vector2 pointer = mouse.position.ReadValue();
+        float x = pointer.x <= cameraEdgeSize ? -1f : (pointer.x >= Screen.width - cameraEdgeSize ? 1f : 0f);
+        float y = pointer.y <= cameraEdgeSize ? -1f : (pointer.y >= Screen.height - cameraEdgeSize ? 1f : 0f);
+        if (Mathf.Approximately(x, 0f) && Mathf.Approximately(y, 0f)) return;
+
+        Transform panTransform = virtualCamera != null ? virtualCamera.transform : cam.transform;
+        Vector3 right = panTransform.right;
+        Vector3 forward = panTransform.forward;
+        right.y = 0f;
+        forward.y = 0f;
+        Vector3 direction = right.normalized * x + forward.normalized * y;
+        if (direction.sqrMagnitude < 0.001f) return;
+        direction.Normalize();
+
+        var ground = new Plane(Vector3.up, grid.transform.position);
+        Ray centerRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        if (!ground.Raycast(centerRay, out float distance)) return;
+        Vector3 center = centerRay.GetPoint(distance);
+        Vector3 nextCenter = center + direction * cameraPanSpeed * Time.unscaledDeltaTime;
+        float halfWidth = grid.width * grid.cellSize * 0.5f;
+        float halfHeight = grid.height * grid.cellSize * 0.5f;
+        nextCenter.x = Mathf.Clamp(nextCenter.x, grid.transform.position.x - halfWidth, grid.transform.position.x + halfWidth);
+        nextCenter.z = Mathf.Clamp(nextCenter.z, grid.transform.position.z - halfHeight, grid.transform.position.z + halfHeight);
+        Vector3 shift = nextCenter - center;
+        shift.y = 0f;
+        panTransform.position += shift;
+        if (panTransform != cam.transform) cam.transform.position += shift;
     }
 
     void UpdateHover(Mouse mouse, bool overMenu)
@@ -340,6 +495,31 @@ public class Game : MonoBehaviour
 
     void Say(string t, float seconds = 2.5f) { msg = t; msgTimer = seconds; }
 
+    public void RaiseGameplayEvent(GameplayEventType type, GameObject subject = null, float value = 0f, string details = null)
+    {
+        Vector3 position = subject != null ? subject.transform.position : Vector3.zero;
+        var gameEvent = new GameplayEvent(type, position, subject, value,
+            string.IsNullOrEmpty(details) ? (subject != null ? subject.name : type.ToString()) : details);
+        recentEvents.Add(gameEvent);
+        while (recentEvents.Count > eventLogEntries) recentEvents.RemoveAt(0);
+        GameplayEventRaised?.Invoke(gameEvent);
+    }
+
+    void SelectNextScenario()
+    {
+        if (scenarios.Count == 0)
+        {
+            Say("Sem cenários. Use Tools > Village > Create Playtest Scenario Templates no Editor.");
+            return;
+        }
+
+        int index = scenarios.FindIndex(s => s.name == selectedScenarioName);
+        index = (index + 1) % scenarios.Count;
+        selectedScenarioName = scenarios[index].name;
+        scenarioChangePending = true;
+        Say($"Próximo cenário: {scenarios[index].displayName}. Aperte R para reiniciar e aplicar.", 5f);
+    }
+
     // ---------- Noite ----------
     IEnumerator RunNight()
     {
@@ -347,6 +527,7 @@ public class Game : MonoBehaviour
 
         night = true;
         round++;
+        RaiseGameplayEvent(GameplayEventType.NightStarted, null, round, $"Noite {round} começou");
         int groups = Mathf.Min(initialGroups + (round - 1) / Mathf.Max(1, groupsPerRounds), maxGroups);
         int commons = baseCommonEnemies + round * commonsPerRound;
         bool tank = round % Mathf.Max(1, tankEveryRounds) == 0;
@@ -375,6 +556,7 @@ public class Game : MonoBehaviour
         int sup = dawnSuppliesBase + round;
         wallet.Add(ResourceType.Wood, dawnWood);
         wallet.Add(ResourceType.Supplies, sup);
+        RaiseGameplayEvent(GameplayEventType.DawnReached, null, round, $"Amanheceu após a noite {round}");
         Say($"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
     }
 
@@ -418,6 +600,7 @@ public class Game : MonoBehaviour
         e.ApplyBalance(balance);
         gp.Add(e);
         gp.ApplySocialProfile(e);
+        RaiseGameplayEvent(GameplayEventType.EnemySpawned, go, 0f, $"Surgiu {type} ({pers})");
     }
 
     // ---------- HUD ----------
@@ -440,8 +623,36 @@ public class Game : MonoBehaviour
 
         GUI.Label(new Rect(10, 32, 1400, 26), night
             ? "Sobreviva à noite..."
-            : "Clique esq.: construir  |  Clique dir.: vender  |  [1-9] ou clique no menu: escolher  |  [Espaço]: iniciar noite", st);
+            : "Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
         GUI.Label(new Rect(10, 56, 1400, 26), msg, st);
+        string scenarioLabel = scenario != null ? scenario.displayName : "Inspector";
+        if (scenarioChangePending && scenarios.Count > 0)
+        {
+            var pending = scenarios.Find(s => s.name == selectedScenarioName);
+            if (pending != null) scenarioLabel = $"{scenarioLabel} -> {pending.displayName} (R para aplicar)";
+        }
+        GUI.Label(new Rect(10, 80, 900, 22), $"Cenário: {scenarioLabel}   Mapa: {grid.width} x {grid.height}   Entradas: {spawns.Count}", st);
+
+        if (showEventLog)
+        {
+            float rowHeight = 20f;
+            float panelWidth = Mathf.Min(440f, Screen.width * 0.45f);
+            float panelHeight = (recentEvents.Count + 1) * rowHeight + 12f;
+            var panel = new Rect(Screen.width - panelWidth - 10f, 108f, panelWidth, panelHeight);
+            GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.82f);
+            GUI.DrawTexture(panel, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(panel.x + 8, panel.y + 4, panel.width - 16, rowHeight), "EVENTOS DE PLAYTEST [F3]", st);
+            for (int i = 0; i < recentEvents.Count; i++)
+            {
+                var ev = recentEvents[recentEvents.Count - 1 - i];
+                GUI.Label(new Rect(panel.x + 8, panel.y + 4 + (i + 1) * rowHeight, panel.width - 16, rowHeight),
+                    $"{ev.time:0}s  {ev.details}", st);
+            }
+        }
+
+        if (scenario != null && !string.IsNullOrEmpty(scenario.instructions))
+            GUI.Label(new Rect(10, 104, 700, 38), scenario.instructions, st);
 
         // Menu de construção
         var nameSt = new GUIStyle(GUI.skin.label) { fontSize = 15, fontStyle = FontStyle.Bold };

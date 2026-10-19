@@ -31,8 +31,23 @@ public class GridWorld : MonoBehaviour
     void Awake()
     {
         I = this;
+        Allocate();
+    }
+
+    public void Configure(int newWidth, int newHeight, float newCellSize, int newBreakCost)
+    {
+        width = Mathf.Max(3, newWidth);
+        height = Mathf.Max(3, newHeight);
+        cellSize = Mathf.Max(0.1f, newCellSize);
+        breakCost = Mathf.Max(0, newBreakCost);
+        Allocate();
+    }
+
+    void Allocate()
+    {
         cells = new Structure[width, height];
         dist = new int[width, height];
+        targetDistances.Clear();
     }
 
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < width && c.y < height;
