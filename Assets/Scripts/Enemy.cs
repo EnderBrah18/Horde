@@ -21,6 +21,12 @@ public class Enemy : MonoBehaviour
     public float attackRange = 3f;
     public float tacticRadius = 10f;   // Hunter enxerga torres a esta distância
     public Health hp;
+    public EnemySocialProfile socialProfile;
+
+    public bool CanDesert => socialProfile == null ||
+        (socialProfile.temperament != EnemyTemperament.Disciplined &&
+         socialProfile.temperament != EnemyTemperament.Loyal &&
+         socialProfile.temperament != EnemyTemperament.Berserker);
 
     float atkTimer;
     float wanderTimer;
@@ -33,6 +39,9 @@ public class Enemy : MonoBehaviour
     public void Init(EnemyType t, Personality p, float b, EnemyGroup g)
     {
         type = t; personality = p; braveza = b; group = g;
+        socialProfile = GetComponent<EnemySocialProfile>();
+        if (socialProfile == null) socialProfile = gameObject.AddComponent<EnemySocialProfile>();
+        socialProfile.RollOnSpawn();
         home = transform.position;
         hp = GetComponent<Health>();
 
@@ -48,6 +57,20 @@ public class Enemy : MonoBehaviour
         GetComponent<Renderer>().material.color = c;
     }
 
+    public void SetSocialRole(EnemySocialRole role)
+    {
+        if (socialProfile == null) socialProfile = GetComponent<EnemySocialProfile>();
+        if (socialProfile != null) socialProfile.role = role;
+    }
+
+    public void BecomeLoneWolf()
+    {
+        if (group != null) group.Remove(this);
+        group = null;
+        state = EState.March;
+        SetSocialRole(EnemySocialRole.LoneWolf);
+    }
+
     void OnDied(Health h)
     {
         if (group != null) group.Remove(this);
@@ -57,6 +80,7 @@ public class Enemy : MonoBehaviour
     public void Desert()
     {
         if (state == EState.Flee) return;
+        if (!CanDesert) return;
         var g = group;
         group = null;
         if (g != null) g.Remove(this);
@@ -111,6 +135,20 @@ public class Enemy : MonoBehaviour
         Vector3 pos = transform.position;
         Structure t = PickTarget(pos);
 
+        if (group != null && group.Leader == this)
+            group.CommandTarget = t;
+        else if (group != null && group.Leader != null && socialProfile != null)
+        {
+            bool followsOrders = group.tactic == GroupTactic.Tactical ||
+                                 socialProfile.temperament == EnemyTemperament.Disciplined ||
+                                 socialProfile.temperament == EnemyTemperament.Loyal ||
+                                 socialProfile.behavior == EnemySocialBehavior.Passive;
+            if (followsOrders && socialProfile.temperament != EnemyTemperament.Wild &&
+                socialProfile.temperament != EnemyTemperament.Berserker &&
+                socialProfile.behavior != EnemySocialBehavior.Rebellious && group.CommandTarget != null)
+                t = group.CommandTarget;
+        }
+
         if (t != null && Vector3.Distance(pos, t.transform.position) <= attackRange)
         {
             TryAttack(t);
@@ -121,12 +159,27 @@ public class Enemy : MonoBehaviour
         if (t != null && t.kind == StructureKind.Tower)
             d = GridWorld.I.FlowDir(pos, t.cell); // Hunter desvia de construções até a torre
         else d = GridWorld.I.FlowDir(pos);
+        if (t != null && t.kind != StructureKind.Core && t.kind != StructureKind.Tower)
+            d = GridWorld.I.FlowDir(pos, t.cell);
         return d;
     }
 
     // Personalidade de alvo: Objective só quer o Coração. Hunter também se desvia para torres próximas.
     Structure PickTarget(Vector3 pos)
     {
+        if (socialProfile != null && socialProfile.temperament == EnemyTemperament.Berserker)
+        {
+            Structure nearest = null;
+            float nearestDistance = float.MaxValue;
+            foreach (var s in Structure.All)
+            {
+                if (s == null) continue;
+                float distance = Vector3.Distance(pos, s.transform.position);
+                if (distance < nearestDistance) { nearest = s; nearestDistance = distance; }
+            }
+            if (nearest != null) return nearest;
+        }
+
         Structure best = null;
         float bd = float.MaxValue;
         foreach (var s in Structure.All)

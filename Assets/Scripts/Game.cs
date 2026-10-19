@@ -336,6 +336,7 @@ public class Game : MonoBehaviour
         var e = go.AddComponent<Enemy>();
         e.Init(type, pers, brav, gp);
         gp.Add(e);
+        gp.ApplySocialProfile(e);
     }
 
     // ---------- HUD ----------

@@ -9,15 +9,41 @@ public class EnemyGroup : MonoBehaviour
     public int minSize = 5;     // tamanho mínimo para marchar (ou ter um Tank)
     public int expected;        // total planejado do grupo
     public int spawned;
+    public GroupTactic tactic = GroupTactic.Tactical;
+    public bool randomizeTactic = true;
+    [Range(0f, 1f)] public float loneWolfChance = 0.1f;
+    public Structure CommandTarget;
+
+    bool tacticChosen;
+    readonly HashSet<Enemy> socialProfilesApplied = new HashSet<Enemy>();
 
     float marchDelay = -1f;
     float panic = -1f;
 
     public void Add(Enemy e) { members.Add(e); spawned++; }
 
+    public void ApplySocialProfile(Enemy e)
+    {
+        if (e == null || !socialProfilesApplied.Add(e)) return;
+
+        if (!tacticChosen)
+        {
+            if (randomizeTactic)
+                tactic = Random.value < 0.7f ? GroupTactic.Tactical : GroupTactic.Aggressive;
+            tacticChosen = true;
+        }
+
+        e.SetSocialRole(EnemySocialRole.Soldier);
+        bool rebelliousTooLarge = e.socialProfile != null &&
+            e.socialProfile.behavior == EnemySocialBehavior.Rebellious && members.Count > 3;
+        if (rebelliousTooLarge || Random.value < loneWolfChance)
+            e.BecomeLoneWolf();
+    }
+
     public void Remove(Enemy e)
     {
         members.Remove(e);
+        if (Leader == e) CommandTarget = null;
         if (Leader == e) Leader = null;
     }
 
@@ -96,6 +122,10 @@ public class EnemyGroup : MonoBehaviour
         Leader = best;
         if (best != null)
         {
+            best.SetSocialRole(EnemySocialRole.Leader);
+            foreach (var member in members)
+                if (member != null && member != best) member.SetSocialRole(EnemySocialRole.Soldier);
+
             var crown = Game.Prim(PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.35f, Color.white);
             crown.name = "Crown";
             crown.transform.SetParent(best.transform, false);
