@@ -10,6 +10,14 @@ public class Tower : MonoBehaviour
     float lineTimer;
     LineRenderer lr;
 
+    public void Setup(BuildingData data)
+    {
+        if (data == null) return;
+        range = data.towerRange;
+        damage = data.towerDamage;
+        cooldown = data.towerCooldown;
+    }
+
     void Awake()
     {
         lr = gameObject.AddComponent<LineRenderer>();

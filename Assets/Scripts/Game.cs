@@ -21,6 +21,34 @@ public class Game : MonoBehaviour
     public int dawnWood = 10;
     public int dawnSuppliesBase = 3;
 
+    [Header("Balanceamento de inimigos")]
+    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings();
+    public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
+    {
+        maxHealth = 140f,
+        speed = 2.2f,
+        damage = 14f,
+        scale = new Vector3(1.8f, 0.9f, 1.8f)
+    };
+
+    [Header("Balanceamento das noites")]
+    [Min(0)] public int initialGroups = 1;
+    [Min(0)] public int groupsPerRounds = 2;
+    [Min(1)] public int maxGroups = 4;
+    [Min(0)] public int baseCommonEnemies = 4;
+    [Min(0)] public int commonsPerRound = 1;
+    [Min(1)] public int tankEveryRounds = 2;
+    [Range(0f, 1f)] public float hunterBaseChance = 0.3f;
+    [Range(0f, 1f)] public float hunterChancePerRound = 0.05f;
+    [Range(0f, 1f)] public float hunterChanceCap = 0.6f;
+    [Min(0f)] public float spawnInterval = 0.4f;
+    [Min(0f)] public float groupInterval = 3f;
+
+    [Header("Balanceamento dos grupos")]
+    [Min(1)] public int groupMinSize = 5;
+    [Range(0f, 1f)] public float loneWolfChance = 0.1f;
+    [Range(0f, 1f)] public float tacticalGroupChance = 0.7f;
+
     [Header("Estado (somente leitura)")]
     public int round;
     public int killed;
@@ -30,6 +58,42 @@ public class Game : MonoBehaviour
 
     public Wallet wallet = new Wallet();
     public Structure core;
+
+    void OnValidate()
+    {
+        startWood = Mathf.Max(0, startWood);
+        startSupplies = Mathf.Max(0, startSupplies);
+        dawnWood = Mathf.Max(0, dawnWood);
+        dawnSuppliesBase = Mathf.Max(0, dawnSuppliesBase);
+        initialGroups = Mathf.Max(0, initialGroups);
+        groupsPerRounds = Mathf.Max(1, groupsPerRounds);
+        maxGroups = Mathf.Max(1, maxGroups);
+        baseCommonEnemies = Mathf.Max(0, baseCommonEnemies);
+        commonsPerRound = Mathf.Max(0, commonsPerRound);
+        tankEveryRounds = Mathf.Max(1, tankEveryRounds);
+        hunterBaseChance = Mathf.Clamp01(hunterBaseChance);
+        hunterChancePerRound = Mathf.Clamp01(hunterChancePerRound);
+        hunterChanceCap = Mathf.Clamp01(hunterChanceCap);
+        spawnInterval = Mathf.Max(0f, spawnInterval);
+        groupInterval = Mathf.Max(0f, groupInterval);
+        groupMinSize = Mathf.Max(1, groupMinSize);
+        loneWolfChance = Mathf.Clamp01(loneWolfChance);
+        tacticalGroupChance = Mathf.Clamp01(tacticalGroupChance);
+        ClampEnemyBalance(commonEnemy);
+        ClampEnemyBalance(tankEnemy);
+    }
+
+    static void ClampEnemyBalance(EnemyBalanceSettings settings)
+    {
+        if (settings == null) return;
+        settings.maxHealth = Mathf.Max(1f, settings.maxHealth);
+        settings.speed = Mathf.Max(0f, settings.speed);
+        settings.damage = Mathf.Max(0f, settings.damage);
+        settings.attackCooldown = Mathf.Max(0.01f, settings.attackCooldown);
+        settings.attackRange = Mathf.Max(0f, settings.attackRange);
+        settings.tacticRadius = Mathf.Max(0f, settings.tacticRadius);
+        settings.scale = new Vector3(Mathf.Max(0.1f, settings.scale.x), Mathf.Max(0.1f, settings.scale.y), Mathf.Max(0.1f, settings.scale.z));
+    }
 
     static Material baseMat;
     public static Material LineMat;
@@ -137,7 +201,7 @@ public class Game : MonoBehaviour
                       new Vector3(d.size.x * cs, d.size.y, d.size.z * cs), d.color);
         go.name = d.displayName;
 
-        if (d.kind == StructureKind.Tower) go.AddComponent<Tower>();
+        if (d.kind == StructureKind.Tower) go.AddComponent<Tower>().Setup(d);
         if (d.amount > 0)
         {
             var pr = go.AddComponent<Producer>();
@@ -279,44 +343,59 @@ public class Game : MonoBehaviour
     // ---------- Noite ----------
     IEnumerator RunNight()
     {
+        if (night || lost) yield break;
+
         night = true;
         round++;
-        int groups = Mathf.Min(1 + (round - 1) / 2, 4);
-        int commons = 4 + round;
-        bool tank = round % 2 == 0;
+        int groups = Mathf.Min(initialGroups + (round - 1) / Mathf.Max(1, groupsPerRounds), maxGroups);
+        int commons = baseCommonEnemies + round * commonsPerRound;
+        bool tank = round % Mathf.Max(1, tankEveryRounds) == 0;
 
         for (int g = 0; g < groups; g++)
         {
+            if (lost) break;
             var cell = spawns[Random.Range(0, spawns.Count)];
             yield return SpawnGroup(cell, commons, tank);
-            yield return new WaitForSeconds(3f);
+            if (lost) break;
+
+            float groupDelay = 0f;
+            while (!lost && groupDelay < groupInterval)
+            {
+                groupDelay += Time.deltaTime;
+                yield return null;
+            }
         }
 
-        yield return new WaitUntil(() => Enemy.All.Count == 0 || lost);
-        night = false;
         if (!lost)
-        {
-            int sup = dawnSuppliesBase + round;
-            wallet.Add(ResourceType.Wood, dawnWood);
-            wallet.Add(ResourceType.Supplies, sup);
-            Say($"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
-        }
+            yield return new WaitUntil(() => Enemy.All.Count == 0 || lost);
+
+        night = false;
+        if (lost) yield break;
+
+        int sup = dawnSuppliesBase + round;
+        wallet.Add(ResourceType.Wood, dawnWood);
+        wallet.Add(ResourceType.Supplies, sup);
+        Say($"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
     }
 
     IEnumerator SpawnGroup(Vector2Int cell, int commons, bool tank)
     {
         var gp = new GameObject("Group").AddComponent<EnemyGroup>();
+        gp.minSize = groupMinSize;
+        gp.loneWolfChance = loneWolfChance;
+        gp.tacticalGroupChance = tacticalGroupChance;
         gp.expected = commons + (tank ? 1 : 0);
-        float hunterChance = Mathf.Min(0.3f + 0.05f * round, 0.6f);
+        float hunterChance = Mathf.Min(hunterBaseChance + hunterChancePerRound * round, hunterChanceCap);
 
         for (int i = 0; i < gp.expected; i++)
         {
+            if (lost) yield break;
             bool isTank = tank && i == gp.expected - 1;   // o Tank chega por último
             var pers = (!isTank && Random.value < hunterChance) ? Personality.Hunter : Personality.Objective;
             float r = Random.value;
             float brav = isTank ? 1f : (r < 0.4f ? 1f : (r < 0.75f ? 0.5f : 0.2f));
             SpawnEnemy(gp, cell, isTank ? EnemyType.Tank : EnemyType.Common, pers, brav);
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(spawnInterval);
         }
     }
 
@@ -324,8 +403,9 @@ public class Game : MonoBehaviour
     {
         PrimitiveType shape = type == EnemyType.Tank ? PrimitiveType.Cylinder
                             : (pers == Personality.Hunter ? PrimitiveType.Cube : PrimitiveType.Sphere);
-        Vector3 scale = type == EnemyType.Tank ? new Vector3(1.8f, 0.9f, 1.8f) : Vector3.one * 0.9f;
-        float y = type == EnemyType.Tank ? 0.9f : 0.45f;
+        var balance = type == EnemyType.Tank ? tankEnemy : commonEnemy;
+        Vector3 scale = balance.scale;
+        float y = scale.y * 0.5f;
 
         Vector3 pos = grid.CellToWorld(cell) + new Vector3(Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
         pos.y = grid.transform.position.y + y;
@@ -335,6 +415,7 @@ public class Game : MonoBehaviour
         go.AddComponent<Health>();
         var e = go.AddComponent<Enemy>();
         e.Init(type, pers, brav, gp);
+        e.ApplyBalance(balance);
         gp.Add(e);
         gp.ApplySocialProfile(e);
     }
@@ -384,8 +465,10 @@ public class Game : MonoBehaviour
             GUI.Label(new Rect(r.x + 22, r.y + 24, r.width - 26, 18), CostText(d), smallSt);
 
             smallSt.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
-            string extra = d.amount > 0 ? $"+{d.amount} {(d.produces == ResourceType.Wood ? "Madeira" : "Supr.")} / {d.cycleSeconds:0}s"
-                                        : $"Vida {d.maxHealth:0}";
+            string extra = d.kind == StructureKind.Tower
+                ? $"Vida {d.maxHealth:0}  Dano {d.towerDamage:0}  Alcance {d.towerRange:0}"
+                : d.amount > 0 ? $"+{d.amount} {(d.produces == ResourceType.Wood ? "Madeira" : "Supr.")} / {d.cycleSeconds:0}s"
+                               : $"Vida {d.maxHealth:0}";
             GUI.Label(new Rect(r.x + 22, r.y + 42, r.width - 26, 18), extra, smallSt);
         }
 

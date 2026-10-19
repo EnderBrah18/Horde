@@ -57,6 +57,17 @@ public class Enemy : MonoBehaviour
         GetComponent<Renderer>().material.color = c;
     }
 
+    public void ApplyBalance(EnemyBalanceSettings balance)
+    {
+        if (balance == null) return;
+        speed = balance.speed;
+        damage = balance.damage;
+        attackCooldown = balance.attackCooldown;
+        attackRange = balance.attackRange;
+        tacticRadius = balance.tacticRadius;
+        if (hp != null) hp.Setup(balance.maxHealth);
+    }
+
     public void SetSocialRole(EnemySocialRole role)
     {
         if (socialProfile == null) socialProfile = GetComponent<EnemySocialProfile>();

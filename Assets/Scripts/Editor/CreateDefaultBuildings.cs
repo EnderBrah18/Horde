@@ -29,6 +29,7 @@ public static class CreateDefaultBuildings
             d.shape = PrimitiveType.Cylinder; d.color = new Color(0.2f, 0.8f, 0.9f);
             d.size = new Vector3(0.6f, 1.2f, 0.6f);
             d.woodCost = 15; d.suppliesCost = 2; d.maxHealth = 50f;
+            d.towerRange = 12f; d.towerDamage = 7f; d.towerCooldown = 0.45f;
         });
 
         Make("Sawmill", d =>

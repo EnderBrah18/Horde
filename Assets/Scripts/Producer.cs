@@ -12,10 +12,11 @@ public class Producer : MonoBehaviour
     void Update()
     {
         if (data == null || Game.I == null || Game.I.lost) return;
+        float cycle = Mathf.Max(0.1f, data.cycleSeconds);
         timer += Time.deltaTime;
-        if (timer >= data.cycleSeconds)
+        if (timer >= cycle)
         {
-            timer -= data.cycleSeconds;
+            timer -= cycle;
             Game.I.wallet.Add(data.produces, data.amount);
         }
     }

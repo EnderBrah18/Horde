@@ -23,8 +23,24 @@ public class BuildingData : ScriptableObject
     [Header("Atributos")]
     public float maxHealth = 60f;
 
+    [Header("Torre (usado quando Tipo = Torre)")]
+    [Min(0f)] public float towerRange = 12f;
+    [Min(0f)] public float towerDamage = 7f;
+    [Min(0.01f)] public float towerCooldown = 0.45f;
+
     [Header("Produção (opcional)")]
     public ResourceType produces = ResourceType.Wood;
     public int amount = 0;                  // 0 = não produz
     public float cycleSeconds = 5f;
+
+    void OnValidate()
+    {
+        woodCost = Mathf.Max(0, woodCost);
+        suppliesCost = Mathf.Max(0, suppliesCost);
+        maxHealth = Mathf.Max(1f, maxHealth);
+        towerRange = Mathf.Max(0f, towerRange);
+        towerDamage = Mathf.Max(0f, towerDamage);
+        towerCooldown = Mathf.Max(0.01f, towerCooldown);
+        cycleSeconds = Mathf.Max(0.1f, cycleSeconds);
+    }
 }

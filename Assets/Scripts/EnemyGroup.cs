@@ -11,6 +11,7 @@ public class EnemyGroup : MonoBehaviour
     public int spawned;
     public GroupTactic tactic = GroupTactic.Tactical;
     public bool randomizeTactic = true;
+    [Range(0f, 1f)] public float tacticalGroupChance = 0.7f;
     [Range(0f, 1f)] public float loneWolfChance = 0.1f;
     public Structure CommandTarget;
 
@@ -29,7 +30,7 @@ public class EnemyGroup : MonoBehaviour
         if (!tacticChosen)
         {
             if (randomizeTactic)
-                tactic = Random.value < 0.7f ? GroupTactic.Tactical : GroupTactic.Aggressive;
+                tactic = Random.value < tacticalGroupChance ? GroupTactic.Tactical : GroupTactic.Aggressive;
             tacticChosen = true;
         }
 
