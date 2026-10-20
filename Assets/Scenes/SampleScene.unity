@@ -522,7 +522,7 @@ MonoBehaviour:
   pathBreakCost: 10
   spawnBuildClearance: 1
   coreBuildClearance: 0
-  spawnEdges: 15
+  spawnEdges: -1
   buildGridWidth: 0
   buildGridHeight: 0
   buildGridOffset: {x: 0, y: 0}
