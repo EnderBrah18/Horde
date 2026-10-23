@@ -1202,6 +1202,13 @@ public class Game : MonoBehaviour
         var st = new GUIStyle(GUI.skin.label) { fontSize = 16 };
         st.normal.textColor = Color.white;
         bool showConstructionUI = !night && !combatCameraMode;
+        string activeModeName = night
+            ? (combatCameraMode ? "Combate" : "Livre")
+            : (combatCameraMode ? "Exploração" : "Construção");
+        string alternateModeName = night
+            ? (combatCameraMode ? "Livre" : "Combate")
+            : (combatCameraMode ? "Construção" : "Exploração");
+        string modeHint = $"Modo {activeModeName}  |  Tab: Modo {alternateModeName}";
 
         if (sceneDrivenLayout && showConstructionUI) DrawStructureLabels();
 
@@ -1211,12 +1218,14 @@ public class Game : MonoBehaviour
             $"Rodada {displayedRound}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Abates: {killed}   Desertores: {deserted}", st);
 
         GUI.Label(new Rect(10, 32, 1400, 26), night
-            ? $"Sobreviva à noite...  |  Câmera de combate [Tab]"
+            ? modeHint + (combatCameraMode
+                ? "  |  Sobreviva à noite...  |  Câmera seguindo o jogador"
+                : "  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar")
             : combatCameraMode
-                ? "Modo combate  |  Câmera seguindo o jogador [Tab: modo construção]"
+                ? modeHint + "  |  Câmera seguindo o jogador"
             : sceneDrivenLayout
-                ? $"Clique esq.: construir  |  Clique dir.: vender  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  Câmera: {(combatCameraMode ? "combate" : "construção")} [Tab]  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar"
-                : "Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
+                ? modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar"
+                : modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
         GUI.Label(new Rect(10, 56, 1400, 26), msg, st);
         if (sceneDrivenLayout && showConstructionUI && buildArea != null)
         {
