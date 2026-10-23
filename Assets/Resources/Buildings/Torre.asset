@@ -26,7 +26,7 @@ MonoBehaviour:
   specialBuildPointId: 
   maxHealth: 60
   towerRange: 12
-  towerDamage: 1
+  towerDamage: 7
   towerCooldown: 0.45
   productionMode: 0
   produces: 0

@@ -120,7 +120,7 @@ public class GridWorld : MonoBehaviour
 
     // Route through openings first. Structures other than the destination remain blocked.
     public bool TryOpenRoute(Vector3 position, Vector2Int destination, out Vector3 direction,
-        float maxExtraDistance = float.PositiveInfinity)
+        float maxExtraDistance = float.PositiveInfinity, float clearance = 0f)
     {
         direction = Vector3.zero;
         Vector2Int start = WorldToCell(position);
@@ -155,16 +155,39 @@ public class GridWorld : MonoBehaviour
         if (distances[start.x, start.y] * cellSize > directSteps * cellSize + maxExtraDistance)
             return false;
         int best = distances[start.x, start.y];
+        float bestScore = float.PositiveInfinity;
         Vector2Int step = start;
         foreach (var offset in D4)
         {
             Vector2Int next = start + offset;
             if (!InBounds(next) || distances[next.x, next.y] >= best) continue;
-            best = distances[next.x, next.y];
+            float score = distances[next.x, next.y] + ClearancePenalty(next, clearance);
+            if (score >= bestScore) continue;
+            bestScore = score;
             step = next;
         }
         direction = DirectionTo(position, CellToWorld(step));
         return true;
+    }
+
+    float ClearancePenalty(Vector2Int cell, float clearance)
+    {
+        if (clearance <= 0f) return 0f;
+        Vector3 point = CellToWorld(cell);
+        float nearest = clearance;
+        int rings = Mathf.CeilToInt(clearance / cellSize) + 1;
+        for (int x = cell.x - rings; x <= cell.x + rings; x++)
+            for (int y = cell.y - rings; y <= cell.y + rings; y++)
+            {
+                Vector2Int obstacle = new Vector2Int(x, y);
+                if (InBounds(obstacle) && !IsHardBlocked(obstacle) && Get(obstacle) == null) continue;
+                Vector3 center = CellToWorld(obstacle);
+                float dx = Mathf.Max(0f, Mathf.Abs(point.x - center.x) - cellSize * 0.5f);
+                float dz = Mathf.Max(0f, Mathf.Abs(point.z - center.z) - cellSize * 0.5f);
+                nearest = Mathf.Min(nearest, Mathf.Sqrt(dx * dx + dz * dz));
+            }
+        // A preference rather than a hard block keeps narrow openings usable.
+        return (1f - nearest / clearance) * 3f;
     }
 
     public Structure Get(Vector2Int c) => InBounds(c) ? cells[c.x, c.y] : null;

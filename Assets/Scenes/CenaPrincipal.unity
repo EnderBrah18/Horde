@@ -10296,7 +10296,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageBuildArea
   center: {fileID: 1051762590}
-  initialRadius: 429.4
+  initialRadius: 284.1
   radiusPerUpgrade: 10
   expansionLevel: 0
   maxExpansionLevel: 4
@@ -10390,7 +10390,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000031
 Transform:
   m_ObjectHideFlags: 0
@@ -10437,7 +10437,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000041
 Transform:
   m_ObjectHideFlags: 0
@@ -10531,7 +10531,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000061
 Transform:
   m_ObjectHideFlags: 0
@@ -10635,6 +10635,7 @@ MonoBehaviour:
   coreHealth: 300
   eventLogEntries: 8
   showEventLog: 1
+  debugEnemyTargeting: 0
   scenario: {fileID: 0}
   commonEnemy:
     maxHealth: 25
@@ -10652,7 +10653,7 @@ MonoBehaviour:
     attackRange: 3
     tacticRadius: 100
     scale: {x: 1.8, y: 0.9, z: 1.8}
-  initialGroups: 1
+  initialGroups: 2
   groupsPerRounds: 2
   maxGroups: 4
   baseCommonEnemies: 4
@@ -10666,6 +10667,8 @@ MonoBehaviour:
   groupMinSize: 5
   loneWolfChance: 0.1
   tacticalGroupChance: 0.7
+  groupMergeRadius: 16
+  varyFanaticBraveryForTesting: 1
   round: 0
   killed: 0
   deserted: 0

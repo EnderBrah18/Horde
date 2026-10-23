@@ -14,6 +14,8 @@ public class Enemy : MonoBehaviour
     public float braveza = 1f;
     public EnemyGroup group;
     public bool AvailableForRecruitment { get; private set; }
+    [Min(1f)] public float deserterDespawnDelay = 30f;
+    float deserterIdleTime;
     public EState state = EState.Rally;
 
     public float speed = 3.2f;
@@ -22,6 +24,9 @@ public class Enemy : MonoBehaviour
     public float attackRange = 3f;
     [Min(0.1f)] public float steeringResponse = 12f;
     [Min(1f)] public float turnSpeed = 300f;
+    [Min(0f)] public float obstacleClearance = 0.6f;
+    float NavigationRadius => Mathf.Max(0.15f,
+        Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.45f) + obstacleClearance;
     Vector3 smoothedMotion;
     Vector3 lastDetourDirection;
     float detourPreferenceUntil;
@@ -168,6 +173,7 @@ public class Enemy : MonoBehaviour
         group = null;
         if (g != null) g.Remove(this);
         state = EState.Flee;
+        deserterIdleTime = 0f;
         GetComponent<Renderer>().material.color = Color.gray;
         Game.I.deserted++;
     }
@@ -176,6 +182,15 @@ public class Enemy : MonoBehaviour
     {
         if (Game.I == null || Game.I.lost) return;
         float dt = Time.deltaTime;
+        if (state == EState.Flee)
+        {
+            deserterIdleTime += dt;
+            if (deserterIdleTime >= deserterDespawnDelay)
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
         atkTimer -= dt;
         targetDecisionTimer -= dt;
         recoveryTimer = Mathf.Max(0f, recoveryTimer - dt);
@@ -218,6 +233,17 @@ public class Enemy : MonoBehaviour
 
         if (state == EState.March && recoveryTimer > 0f && dir.sqrMagnitude > 0.0001f)
             dir = Quaternion.AngleAxis(45f * recoverySide, Vector3.up) * dir;
+
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            float pace = Mathf.Min(1f, dir.magnitude);
+            Vector3 committedStep = transform.position + lastDetourDirection * speed * mult * dt;
+            if (state == EState.March && Time.time < detourPreferenceUntil &&
+                Free(committedStep) && !WouldHitStructure(transform.position, committedStep))
+                dir = lastDetourDirection * pace;
+            else
+                dir = (dir + ObstacleSpacing(dir)).normalized * pace;
+        }
 
         // Filter frame-to-frame steering changes before collision resolution.
         // A stop remains immediate so attacking enemies don't drift past their target.
@@ -319,11 +345,11 @@ public class Enemy : MonoBehaviour
             debugApproachPosition = GridWorld.I.CellToWorld(approachCell);
             debugApproachPosition.y = pos.y;
             hasDebugApproach = true;
-            debugRouteDirection = GridWorld.I.TryOpenRoute(pos, approachCell, out Vector3 openDirection, tacticRadius)
+            debugRouteDirection = GridWorld.I.TryOpenRoute(pos, approachCell, out Vector3 openDirection, tacticRadius, NavigationRadius)
                 ? openDirection : GridWorld.I.FlowDir(pos, approachCell);
             return debugRouteDirection;
         }
-        if (GridWorld.I.TryOpenRoute(pos, GridWorld.I.CoreCell, out Vector3 openCoreDirection, tacticRadius))
+        if (GridWorld.I.TryOpenRoute(pos, GridWorld.I.CoreCell, out Vector3 openCoreDirection, tacticRadius, NavigationRadius))
             return openCoreDirection;
         return GridWorld.I.FlowDir(pos);
     }
@@ -467,6 +493,7 @@ public class Enemy : MonoBehaviour
 
     void OnDamagedBy(Health health, float amount, GameObject source)
     {
+        if (state == EState.Flee && amount > 0f) deserterIdleTime = 0f;
         if (source == null)
         {
             if (DebugTargetingEnabled())
@@ -679,6 +706,18 @@ public class Enemy : MonoBehaviour
         if (targetDirection.sqrMagnitude > 0.0001f) targetDirection.Normalize();
 
         float stepDistance = speed * mult * dt;
+        if (Time.time < detourPreferenceUntil)
+        {
+            Vector3 committedPosition = position + lastDetourDirection * stepDistance;
+            if (Free(committedPosition) && !WouldHitStructure(position, committedPosition))
+            {
+                detourPosition = committedPosition;
+                detourDirection = lastDetourDirection;
+                return true;
+            }
+            // A real obstruction releases the commitment immediately.
+            detourPreferenceUntil = 0f;
+        }
         float bestScore = float.NegativeInfinity;
         for (int angle = 20; angle <= 160; angle += 20)
         {
@@ -702,7 +741,7 @@ public class Enemy : MonoBehaviour
 
         if (bestScore <= float.NegativeInfinity) return false;
         lastDetourDirection = detourDirection;
-        detourPreferenceUntil = Time.time + 0.35f;
+        detourPreferenceUntil = Time.time + 0.9f;
         return true;
     }
 
@@ -725,6 +764,7 @@ public class Enemy : MonoBehaviour
         if (stuckTimer < StuckRecoveryDelay) return;
 
         stuckTimer = 0f;
+        detourPreferenceUntil = 0f;
         recoverySide *= -1;
         recoveryTimer = 0.45f;
         targetDecisionTimer = 0f;
@@ -758,6 +798,36 @@ public class Enemy : MonoBehaviour
             structureMask, QueryTriggerInteraction.Ignore)) return false;
         hitStructure = hit.collider.GetComponentInParent<Structure>();
         return true;
+    }
+
+    Vector3 ObstacleSpacing(Vector3 movement)
+    {
+        Vector3 force = Vector3.zero;
+        Vector3 position = transform.position;
+        float radius = NavigationRadius;
+        foreach (var structure in Structure.All)
+        {
+            if (structure == null) continue;
+            if (structure == selectedTarget && FlatDistance(position, structure.transform.position) <= attackRange + radius)
+                continue;
+            var collider = structure.GetComponent<Collider>();
+            if (collider == null || !collider.enabled || collider.isTrigger) continue;
+            Vector3 sample = position;
+            sample.y = collider.bounds.center.y;
+            Vector3 away = sample - collider.ClosestPoint(sample);
+            away.y = 0f;
+            float distance = away.magnitude;
+            if (distance < 0.001f || distance >= radius) continue;
+            force += away / distance * (1f - distance / radius);
+        }
+        // Include river cells and map edges, which need no Structure component.
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 offset = Quaternion.AngleAxis(i * 45f, Vector3.up) * Vector3.forward;
+            Vector2Int cell = GridWorld.I.WorldToCell(position + offset * radius);
+            if (!GridWorld.I.InBounds(cell) || GridWorld.I.IsHardBlocked(cell)) force -= offset * 0.4f;
+        }
+        return Vector3.ClampMagnitude(force, 0.8f);
     }
 
     bool Free(Vector3 p)
