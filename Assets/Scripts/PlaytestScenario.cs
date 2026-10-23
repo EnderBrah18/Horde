@@ -54,6 +54,7 @@ public class PlaytestScenario : ScriptableObject
     [Range(0f, 1f)] public float loneWolfChance = 0.1f;
     [Range(0f, 1f)] public float tacticalGroupChance = 0.7f;
     [Min(1)] public int groupMinSize = 5;
+    [Min(0f)] public float groupMergeRadius = 16f;
 
     void OnValidate()
     {
@@ -65,6 +66,7 @@ public class PlaytestScenario : ScriptableObject
         pathBreakCost = Mathf.Max(0, pathBreakCost);
         spawnBuildClearance = Mathf.Max(0, spawnBuildClearance);
         coreBuildClearance = Mathf.Max(0, coreBuildClearance);
+        groupMergeRadius = Mathf.Max(0f, groupMergeRadius);
     }
 
     public void ApplyTo(Game game)
@@ -99,6 +101,7 @@ public class PlaytestScenario : ScriptableObject
         game.loneWolfChance = loneWolfChance;
         game.tacticalGroupChance = tacticalGroupChance;
         game.groupMinSize = groupMinSize;
+        game.groupMergeRadius = groupMergeRadius;
     }
 
     static EnemyBalanceSettings Copy(EnemyBalanceSettings source)

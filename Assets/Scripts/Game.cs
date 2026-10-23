@@ -87,6 +87,9 @@ public class Game : MonoBehaviour
     [Min(1)] public int groupMinSize = 5;
     [Range(0f, 1f)] public float loneWolfChance = 0.1f;
     [Range(0f, 1f)] public float tacticalGroupChance = 0.7f;
+    [Min(0f)] public float groupMergeRadius = 16f;
+    [Tooltip("Temporário para testar fusões: Fanáticos comuns recebem bravura entre 1 e 1,2.")]
+    public bool varyFanaticBraveryForTesting = true;
 
     [Header("Estado (somente leitura)")]
     public int round;
@@ -145,6 +148,7 @@ public class Game : MonoBehaviour
         groupMinSize = Mathf.Max(1, groupMinSize);
         loneWolfChance = Mathf.Clamp01(loneWolfChance);
         tacticalGroupChance = Mathf.Clamp01(tacticalGroupChance);
+        groupMergeRadius = Mathf.Max(0f, groupMergeRadius);
         ClampEnemyBalance(commonEnemy);
         ClampEnemyBalance(tankEnemy);
     }
@@ -1111,6 +1115,7 @@ public class Game : MonoBehaviour
         gp.minSize = groupMinSize;
         gp.loneWolfChance = loneWolfChance;
         gp.tacticalGroupChance = tacticalGroupChance;
+        gp.groupMergeRadius = groupMergeRadius;
         gp.expected = commons + (tank ? 1 : 0);
         float hunterChance = Mathf.Min(hunterBaseChance + hunterChancePerRound * round, hunterChanceCap);
 
@@ -1121,6 +1126,8 @@ public class Game : MonoBehaviour
             var pers = (!isTank && Random.value < hunterChance) ? Personality.Hunter : Personality.Objective;
             float r = Random.value;
             float brav = isTank ? 1f : (r < 0.4f ? 1f : (r < 0.75f ? 0.5f : 0.2f));
+            if (!isTank && brav >= 0.99f && varyFanaticBraveryForTesting)
+                brav = Random.Range(1f, 1.2f);
             SpawnEnemy(gp, cell, isTank ? EnemyType.Tank : EnemyType.Common, pers, brav);
             yield return new WaitForSeconds(spawnInterval);
         }

@@ -9,7 +9,8 @@ public enum GameplayEventType
     StructureDestroyed,
     CoreDestroyed,
     NightStarted,
-    DawnReached
+    DawnReached,
+    EnemyGroupMerged
 }
 
 [Serializable]

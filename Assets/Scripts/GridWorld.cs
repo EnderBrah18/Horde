@@ -19,6 +19,7 @@ public class GridWorld : MonoBehaviour
     int[,] dist;
     int[,] tankDist;
     readonly Dictionary<Vector2Int, int[,]> targetDistances = new Dictionary<Vector2Int, int[,]>();
+    readonly Dictionary<Vector2Int, int[,]> openTargetDistances = new Dictionary<Vector2Int, int[,]>();
 
     static readonly Vector2Int[] D4 =
         { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
@@ -63,6 +64,7 @@ public class GridWorld : MonoBehaviour
     void InvalidateFlowFields()
     {
         targetDistances.Clear();
+        openTargetDistances.Clear();
         tankDist = null;
     }
 
@@ -114,6 +116,55 @@ public class GridWorld : MonoBehaviour
         }
 
         return targetCell;
+    }
+
+    // Route through openings first. Structures other than the destination remain blocked.
+    public bool TryOpenRoute(Vector3 position, Vector2Int destination, out Vector3 direction,
+        float maxExtraDistance = float.PositiveInfinity)
+    {
+        direction = Vector3.zero;
+        Vector2Int start = WorldToCell(position);
+        if (!InBounds(start) || !InBounds(destination)) return false;
+        if (!openTargetDistances.TryGetValue(destination, out var distances))
+        {
+            distances = new int[width, height];
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++) distances[x, y] = int.MaxValue;
+            var queue = new Queue<Vector2Int>();
+            Structure destinationStructure = Get(destination);
+            distances[destination.x, destination.y] = 0;
+            queue.Enqueue(destination);
+            while (queue.Count > 0)
+            {
+                Vector2Int current = queue.Dequeue();
+                foreach (var offset in D4)
+                {
+                    Vector2Int next = current + offset;
+                    if (!InBounds(next) || IsHardBlocked(next) || distances[next.x, next.y] != int.MaxValue)
+                        continue;
+                    Structure obstacle = Get(next);
+                    if (obstacle != null && obstacle != destinationStructure) continue;
+                    distances[next.x, next.y] = distances[current.x, current.y] + 1;
+                    queue.Enqueue(next);
+                }
+            }
+            openTargetDistances[destination] = distances;
+        }
+        if (distances[start.x, start.y] == int.MaxValue) return false;
+        int directSteps = Mathf.Abs(start.x - destination.x) + Mathf.Abs(start.y - destination.y);
+        if (distances[start.x, start.y] * cellSize > directSteps * cellSize + maxExtraDistance)
+            return false;
+        int best = distances[start.x, start.y];
+        Vector2Int step = start;
+        foreach (var offset in D4)
+        {
+            Vector2Int next = start + offset;
+            if (!InBounds(next) || distances[next.x, next.y] >= best) continue;
+            best = distances[next.x, next.y];
+            step = next;
+        }
+        direction = DirectionTo(position, CellToWorld(step));
+        return true;
     }
 
     public Structure Get(Vector2Int c) => InBounds(c) ? cells[c.x, c.y] : null;

@@ -13,12 +13,18 @@ public class Enemy : MonoBehaviour
     public Personality personality;
     public float braveza = 1f;
     public EnemyGroup group;
+    public bool AvailableForRecruitment { get; private set; }
     public EState state = EState.Rally;
 
     public float speed = 3.2f;
     public float damage = 4f;
     public float attackCooldown = 1f;
     public float attackRange = 3f;
+    [Min(0.1f)] public float steeringResponse = 12f;
+    [Min(1f)] public float turnSpeed = 300f;
+    Vector3 smoothedMotion;
+    Vector3 lastDetourDirection;
+    float detourPreferenceUntil;
     [Min(0f)] public float tacticRadius = 16f;
     [Min(0f)] public float damagedTargetMemory = 20f;
     public Health hp;
@@ -68,6 +74,13 @@ public class Enemy : MonoBehaviour
         socialProfile = GetComponent<EnemySocialProfile>();
         if (socialProfile == null) socialProfile = gameObject.AddComponent<EnemySocialProfile>();
         socialProfile.RollOnSpawn();
+        if (t == EnemyType.Tank)
+        {
+            braveza = 1f;
+            socialProfile.temperament = EnemyTemperament.Disciplined;
+            socialProfile.behavior = EnemySocialBehavior.Proactive;
+            socialProfile.role = EnemySocialRole.Soldier;
+        }
         home = transform.position;
         hp = GetComponent<Health>();
         if (hp != null)
@@ -107,6 +120,7 @@ public class Enemy : MonoBehaviour
 
     public void BecomeLoneWolf()
     {
+        AvailableForRecruitment = false;
         if (group != null) group.Remove(this);
         group = null;
         state = EState.March;
@@ -119,10 +133,37 @@ public class Enemy : MonoBehaviour
         Game.I.killed++;
     }
 
-    public void Desert()
+    public void LeaveSeparatedGroup()
+    {
+        if (braveza < 0.3f) Desert(true);
+        else if (braveza >= 0.99f) BecomeLoneWolf();
+        else
+        {
+            if (group != null) group.Remove(this);
+            group = null;
+            state = EState.March;
+            SetSocialRole(EnemySocialRole.Soldier);
+            AvailableForRecruitment = true;
+        }
+    }
+
+    public void JoinNearbyGroup(EnemyGroup destination)
+    {
+        if (!AvailableForRecruitment || group != null || destination == null || state == EState.Flee) return;
+        AvailableForRecruitment = false;
+        group = destination;
+        destination.Add(this);
+        destination.expected++;
+        state = EState.March;
+        SetSocialRole(EnemySocialRole.Soldier);
+        targetDecisionTimer = 0f;
+    }
+
+    public void Desert(bool forced = false)
     {
         if (state == EState.Flee) return;
-        if (!CanDesert) return;
+        if (!forced && !CanDesert) return;
+        AvailableForRecruitment = false;
         var g = group;
         group = null;
         if (g != null) g.Remove(this);
@@ -157,9 +198,17 @@ public class Enemy : MonoBehaviour
             case EState.March:
                 dir = MarchDir();
                 if (group != null && dir.sqrMagnitude > 0.0001f)
-                    dir += group.CohesionSteering(this) * group.cohesionStrength;
+                    dir = group.TravelSteering(this, dir,
+                        selectedTarget != null && selectedTarget.kind != StructureKind.Core);
                 // Keep attackers stationary while they are in range of their target.
-                if (dir.sqrMagnitude > 0.0001f) dir += Separation() * 1.5f;
+                if (dir.sqrMagnitude > 0.0001f)
+                {
+                    float travelPace = Mathf.Min(1f, dir.magnitude);
+                    dir += Separation() * 1.5f;
+                    if (group != null && group.tactic == GroupTactic.Tactical &&
+                        (selectedTarget == null || selectedTarget.kind == StructureKind.Core))
+                        dir = dir.normalized * travelPace;
+                }
                 break;
             case EState.Flee:
                 dir = FleeDir(); mult = 1.2f;
@@ -170,8 +219,27 @@ public class Enemy : MonoBehaviour
         if (state == EState.March && recoveryTimer > 0f && dir.sqrMagnitude > 0.0001f)
             dir = Quaternion.AngleAxis(45f * recoverySide, Vector3.up) * dir;
 
+        // Filter frame-to-frame steering changes before collision resolution.
+        // A stop remains immediate so attacking enemies don't drift past their target.
+        if (dir.sqrMagnitude <= 0.0001f)
+            smoothedMotion = Vector3.zero;
+        else
+            smoothedMotion = Vector3.Lerp(smoothedMotion, Vector3.ClampMagnitude(dir, 1f),
+                1f - Mathf.Exp(-steeringResponse * dt));
+        dir = smoothedMotion;
         Vector3 positionBeforeMove = transform.position;
         Move(dir, mult, dt);
+        Vector3 facing = transform.position - positionBeforeMove;
+        facing.y = 0f;
+        if (IsValidTarget(selectedTarget) &&
+            FlatDistance(transform.position, selectedTarget.transform.position) <= attackRange)
+        {
+            facing = selectedTarget.transform.position - transform.position;
+            facing.y = 0f;
+        }
+        if (facing.sqrMagnitude > 0.000001f)
+            transform.rotation = Quaternion.RotateTowards(transform.rotation,
+                Quaternion.LookRotation(facing), turnSpeed * dt);
         UpdateStuckRecovery(positionBeforeMove, dir, dt);
         if (DebugTargetingEnabled() && movementDebugPending)
         {
@@ -251,9 +319,12 @@ public class Enemy : MonoBehaviour
             debugApproachPosition = GridWorld.I.CellToWorld(approachCell);
             debugApproachPosition.y = pos.y;
             hasDebugApproach = true;
-            debugRouteDirection = GridWorld.I.FlowDir(pos, approachCell);
+            debugRouteDirection = GridWorld.I.TryOpenRoute(pos, approachCell, out Vector3 openDirection, tacticRadius)
+                ? openDirection : GridWorld.I.FlowDir(pos, approachCell);
             return debugRouteDirection;
         }
+        if (GridWorld.I.TryOpenRoute(pos, GridWorld.I.CoreCell, out Vector3 openCoreDirection, tacticRadius))
+            return openCoreDirection;
         return GridWorld.I.FlowDir(pos);
     }
 
@@ -283,6 +354,8 @@ public class Enemy : MonoBehaviour
         }
 
         if (group != null && group.Leader != null && group.Leader != this && IsValidTarget(group.CommandTarget) &&
+            (group.CommandTarget.kind != StructureKind.Wall ||
+             (socialProfile != null && socialProfile.temperament == EnemyTemperament.Berserker)) &&
             ShouldFollowLeaderOrder())
         {
             lastTargetReason = "ordem do líder (sem alvo pessoal local)";
@@ -329,6 +402,7 @@ public class Enemy : MonoBehaviour
     bool IsPersonalPriorityCandidate(Structure structure, bool berserker)
     {
         return structure != null &&
+               (structure.kind != StructureKind.Wall || berserker) &&
                (berserker || personality == Personality.Objective || structure.kind == StructureKind.Tower);
     }
 
@@ -383,6 +457,8 @@ public class Enemy : MonoBehaviour
         foreach (var structure in Structure.All)
         {
             if (!IsValidTarget(structure) || !CanPerceive(structure, pos)) continue;
+            if (structure.kind == StructureKind.Wall &&
+                (socialProfile == null || socialProfile.temperament != EnemyTemperament.Berserker)) continue;
             float distance = FlatDistance(pos, structure.transform.position);
             if (distance < bestDistance) { best = structure; bestDistance = distance; }
         }
@@ -530,6 +606,12 @@ public class Enemy : MonoBehaviour
                 var routeBlocker = g.Get(routeCell);
                 if (routeBlocker != null)
                 {
+                    if (type != EnemyType.Tank && TryFindDetour(pos, routeDir, mult, dt,
+                            out Vector3 routeDetour, out Vector3 routeDetourDirection))
+                    {
+                        transform.position = routeDetour;
+                        return;
+                    }
                     if (type != EnemyType.Tank || g.IsTankBreakableWall(routeBlocker))
                         TryAttack(routeBlocker);
                     return;
@@ -579,7 +661,6 @@ public class Enemy : MonoBehaviour
         }
 
         transform.position = np;
-        if (dir.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(dir);
     }
 
     bool TryFindDetour(Vector3 position, Vector3 preferredDirection, float mult, float dt,
@@ -610,6 +691,8 @@ public class Enemy : MonoBehaviour
 
                 float score = Vector3.Dot(candidateDirection, preferredDirection) * 0.35f +
                               Vector3.Dot(candidateDirection, targetDirection) * 0.65f;
+                if (Time.time < detourPreferenceUntil)
+                    score += Vector3.Dot(candidateDirection, lastDetourDirection) * 0.3f;
                 if (score <= bestScore) continue;
                 bestScore = score;
                 detourPosition = candidatePosition;
@@ -617,7 +700,10 @@ public class Enemy : MonoBehaviour
             }
         }
 
-        return bestScore > float.NegativeInfinity;
+        if (bestScore <= float.NegativeInfinity) return false;
+        lastDetourDirection = detourDirection;
+        detourPreferenceUntil = Time.time + 0.35f;
+        return true;
     }
 
     void UpdateStuckRecovery(Vector3 positionBeforeMove, Vector3 intendedDirection, float dt)
