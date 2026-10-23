@@ -44,7 +44,7 @@ MonoBehaviour:
     damage: 4
     attackCooldown: 1
     attackRange: 3
-    tacticRadius: 10
+    tacticRadius: 16
     scale: {x: 0.9, y: 0.9, z: 0.9}
   tankEnemy:
     maxHealth: 140
@@ -52,7 +52,7 @@ MonoBehaviour:
     damage: 14
     attackCooldown: 1
     attackRange: 3
-    tacticRadius: 10
+    tacticRadius: 100
     scale: {x: 1.8, y: 0.9, z: 1.8}
   loneWolfChance: 0.1
   tacticalGroupChance: 0.7

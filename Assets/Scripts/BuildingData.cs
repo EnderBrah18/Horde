@@ -1,5 +1,8 @@
 using UnityEngine;
 
+public enum ProductionMode { None, Active, Passive }
+public enum BuildingMenuCategory { Automatic, Defense, Production, Services, Housing, Utility, Other }
+
 // Uma construção = um asset. Balanceie tudo no Inspector, sem mexer em código.
 [CreateAssetMenu(menuName = "Village/Building", fileName = "NewBuilding")]
 public class BuildingData : ScriptableObject
@@ -9,6 +12,8 @@ public class BuildingData : ScriptableObject
     [TextArea] public string description;
     public int order;                       // posição no menu (1, 2, 3...)
     public StructureKind kind = StructureKind.Wall;
+    [Tooltip("Automatic classifies walls/towers as defense and producers by their output. Choose a category to override it.")]
+    public BuildingMenuCategory menuCategory = BuildingMenuCategory.Automatic;
 
     [Header("Visual (formas geométricas)")]
     public PrimitiveType shape = PrimitiveType.Cube;
@@ -20,6 +25,11 @@ public class BuildingData : ScriptableObject
     public int woodCost = 5;
     public int suppliesCost = 0;
 
+    [Header("Posicionamento")]
+    [Tooltip("Quando ativo, esta construção só pode ocupar um ponto especial com o mesmo ID.")]
+    public bool requiresSpecialBuildPoint;
+    public string specialBuildPointId;
+
     [Header("Atributos")]
     public float maxHealth = 60f;
 
@@ -29,6 +39,7 @@ public class BuildingData : ScriptableObject
     [Min(0.01f)] public float towerCooldown = 0.45f;
 
     [Header("Produção (opcional)")]
+    public ProductionMode productionMode = ProductionMode.None;
     public ResourceType produces = ResourceType.Wood;
     public int amount = 0;                  // 0 = não produz
     public float cycleSeconds = 5f;

@@ -6,15 +6,17 @@ public class Health : MonoBehaviour
     public float max = 100f;
     public float current = 100f;
     public event Action<Health, float> Damaged;
+    public event Action<Health, float, GameObject> DamagedBy;
     public event Action<Health> Died;
 
     public void Setup(float m) { max = current = m; }
 
-    public void Damage(float d)
+    public void Damage(float d, GameObject source = null)
     {
         if (current <= 0f) return;
         current -= d;
         Damaged?.Invoke(this, d);
+        DamagedBy?.Invoke(this, d, source);
         if (current <= 0f)
         {
             Died?.Invoke(this);

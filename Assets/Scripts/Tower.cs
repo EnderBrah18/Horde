@@ -57,6 +57,6 @@ public class Tower : MonoBehaviour
         lr.SetPosition(1, best.transform.position);
         lr.enabled = true;
         lineTimer = 0.06f;
-        best.hp.Damage(damage);
+        best.hp.Damage(damage, gameObject);
     }
 }

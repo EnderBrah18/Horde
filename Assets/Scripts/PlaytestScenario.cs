@@ -42,12 +42,13 @@ public class PlaytestScenario : ScriptableObject
     [Min(0f)] public float groupInterval = 3f;
 
     [Header("Inimigos")]
-    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings();
+    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings { tacticRadius = 16f };
     public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
     {
         maxHealth = 140f,
         speed = 2.2f,
         damage = 14f,
+        tacticRadius = 100f,
         scale = new Vector3(1.8f, 0.9f, 1.8f)
     };
     [Range(0f, 1f)] public float loneWolfChance = 0.1f;

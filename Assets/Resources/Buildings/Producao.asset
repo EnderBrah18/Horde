@@ -25,6 +25,7 @@ MonoBehaviour:
   towerRange: 12
   towerDamage: 7
   towerCooldown: 0.45
+  productionMode: 2
   produces: 0
   amount: 10
   cycleSeconds: 5

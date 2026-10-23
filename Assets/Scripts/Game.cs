@@ -23,9 +23,10 @@ public class Game : MonoBehaviour
     public int dawnSuppliesBase = 3;
 
     [Header("Mapa de playtest")]
-    [Range(11, 61)] public int gridWidth = 21;
-    [Range(11, 61)] public int gridHeight = 21;
-    [Range(21, 61)] public int maxGridDimension = 41;
+    [Range(11, 301)] public int gridWidth = 21;
+    [Range(11, 301)] public int gridHeight = 21;
+    [Range(21, 301)] public int maxGridDimension = 41;
+    [Min(41)] public int sceneMapDimension = 281;
     [Min(0.1f)] public float gridCellSize = 2f;
     [Min(0)] public int pathBreakCost = 10;
     [Min(0)] public int spawnBuildClearance = 1;
@@ -40,22 +41,32 @@ public class Game : MonoBehaviour
     public Vector2Int buildGridOffset;
 
     [Header("Câmera de playtest")]
-    [Min(1f)] public float cameraPanSpeed = 16f;
+    [Min(1f)] public float cameraPanSpeed = 40f;
     [Min(1f)] public float cameraEdgeSize = 28f;
+    [Tooltip("Opcional. Se vazio, o modo combate procura um objeto com a tag Player.")]
+    public Transform combatCameraTarget;
+    [Min(0.1f)] public float combatCameraFollowSpeed = 8f;
+    [Min(1f)] public float buildCameraZoomSpeed = 10f;
+    [Min(1f)] public float buildCameraMinZoom = 15f;
+    [Min(1f)] public float buildCameraMaxZoom = 60f;
+    [Min(0.1f)] public float buildPlacementStep = 0.5f;
 
     [Header("Playtest")]
     [Min(1f)] public float coreHealth = 300f;
     [Min(1)] public int eventLogEntries = 8;
     public bool showEventLog = true;
+    [Tooltip("Registra no Console as decisões de alvo e a direção de movimento dos inimigos.")]
+    public bool debugEnemyTargeting;
     public PlaytestScenario scenario;
 
     [Header("Balanceamento de inimigos")]
-    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings();
+    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings { tacticRadius = 16f };
     public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
     {
         maxHealth = 140f,
         speed = 2.2f,
         damage = 14f,
+        tacticRadius = 100f,
         scale = new Vector3(1.8f, 0.9f, 1.8f)
     };
 
@@ -100,9 +111,11 @@ public class Game : MonoBehaviour
         startSupplies = Mathf.Max(0, startSupplies);
         dawnWood = Mathf.Max(0, dawnWood);
         dawnSuppliesBase = Mathf.Max(0, dawnSuppliesBase);
-        maxGridDimension = Mathf.Clamp(maxGridDimension, 21, 61);
+        maxGridDimension = Mathf.Clamp(maxGridDimension, 21, 301);
         gridWidth = Mathf.Clamp(gridWidth, 11, maxGridDimension);
         gridHeight = Mathf.Clamp(gridHeight, 11, maxGridDimension);
+        sceneMapDimension = Mathf.Clamp(sceneMapDimension, 41, 301);
+        if (sceneMapDimension % 2 == 0) sceneMapDimension++;
         gridCellSize = Mathf.Max(0.1f, gridCellSize);
         pathBreakCost = Mathf.Max(0, pathBreakCost);
         spawnBuildClearance = Mathf.Max(0, spawnBuildClearance);
@@ -111,6 +124,11 @@ public class Game : MonoBehaviour
         buildGridHeight = Mathf.Max(0, buildGridHeight);
         cameraPanSpeed = Mathf.Max(1f, cameraPanSpeed);
         cameraEdgeSize = Mathf.Max(1f, cameraEdgeSize);
+        combatCameraFollowSpeed = Mathf.Max(0.1f, combatCameraFollowSpeed);
+        buildCameraZoomSpeed = Mathf.Max(1f, buildCameraZoomSpeed);
+        buildCameraMinZoom = Mathf.Max(1f, buildCameraMinZoom);
+        buildCameraMaxZoom = Mathf.Max(buildCameraMinZoom, buildCameraMaxZoom);
+        buildPlacementStep = Mathf.Max(0.1f, buildPlacementStep);
         coreHealth = Mathf.Max(1f, coreHealth);
         eventLogEntries = Mathf.Max(1, eventLogEntries);
         initialGroups = Mathf.Max(0, initialGroups);
@@ -147,12 +165,29 @@ public class Game : MonoBehaviour
     public static Material LineMat;
 
     GridWorld grid;
+    VillageBuildArea buildArea;
     CinemachineCamera virtualCamera;
     readonly List<Vector2Int> spawns = new List<Vector2Int>();
+    readonly List<SpecialBuildPoint> specialBuildPoints = new List<SpecialBuildPoint>();
     List<BuildingData> menu = new List<BuildingData>();
+    readonly List<BuildingData> activeMenu = new List<BuildingData>();
+    readonly List<BuildingMenuCategory> menuCategories = new List<BuildingMenuCategory>();
     int selected;
+    BuildingMenuCategory activeMenuCategory = BuildingMenuCategory.Automatic;
+    int menuPage;
     GameObject cursor;
+    LineRenderer buildAreaOutline;
+    LineRenderer nextBuildAreaOutline;
+    LineRenderer previewOutline;
+    float shownBuildRadius = -1f;
     Vector2Int hoverCell;
+    Vector3 hoverPosition;
+    float buildRotation;
+    bool sceneDrivenLayout;
+    bool combatCameraMode;
+    bool draggingBuildCamera;
+    bool snapBuildPosition = true;
+    Vector2 lastBuildCameraPointer;
     string msg = "";
     float msgTimer;
 
@@ -173,7 +208,7 @@ public class Game : MonoBehaviour
     void Awake()
     {
         I = this;
-        virtualCamera = FindFirstObjectByType<CinemachineCamera>();
+        virtualCamera = FindAnyObjectByType<CinemachineCamera>();
         baseMat = litMaterial;
         LineMat = lineMaterial;
         Enemy.All.Clear();
@@ -186,6 +221,8 @@ public class Game : MonoBehaviour
             var selectedScenario = scenarios.Find(s => s.name == selectedScenarioName);
             if (selectedScenario != null) scenario = selectedScenario;
         }
+        buildArea = FindAnyObjectByType<VillageBuildArea>();
+        sceneDrivenLayout = buildArea != null && GameObject.FindGameObjectWithTag("Nucleo") != null;
         if (scenario != null) scenario.ApplyTo(this);
 
         wallet.Wood = startWood;
@@ -196,10 +233,203 @@ public class Game : MonoBehaviour
         menu.Sort((a, b) => a.order.CompareTo(b.order));
         if (menu.Count == 0)
             Say("Nenhuma construção encontrada. Rode: Tools > Village > Create Default Buildings", 600f);
+        BuildMenuCategories();
 
         grid = gameObject.AddComponent<GridWorld>();
-        grid.Configure(gridWidth, gridHeight, gridCellSize, pathBreakCost);
-        BuildWorld();
+        if (sceneDrivenLayout)
+        {
+            grid.Configure(sceneMapDimension, sceneMapDimension, gridCellSize, pathBreakCost);
+            BuildSceneWorld();
+        }
+        else
+        {
+            grid.Configure(gridWidth, gridHeight, gridCellSize, pathBreakCost);
+            BuildWorld();
+        }
+    }
+
+    void BuildSceneWorld()
+    {
+        spawns.Clear();
+        specialBuildPoints.Clear();
+        foreach (var point in FindObjectsByType<EnemySpawnPoint>())
+        {
+            Vector2Int cell = grid.WorldToCell(point.transform.position);
+            if (point.enabledForSpawning && grid.InBounds(cell)) spawns.Add(cell);
+        }
+        specialBuildPoints.AddRange(FindObjectsByType<SpecialBuildPoint>());
+
+        foreach (var river in GameObject.FindGameObjectsWithTag("Rio"))
+        {
+            var collider = river.GetComponent<Collider>();
+            if (collider != null) grid.SetHardBlocked(collider.bounds, true);
+        }
+        foreach (var bridge in GameObject.FindGameObjectsWithTag("Ponte"))
+        {
+            var collider = bridge.GetComponent<Collider>();
+            if (collider != null) grid.ClearHardBlockedWithinColliderFootprint(collider);
+        }
+
+        var registered = new HashSet<GameObject>();
+        var coreObject = GameObject.FindGameObjectWithTag("Nucleo");
+        if (coreObject != null)
+        {
+            core = RegisterSceneStructure(coreObject, StructureKind.Core, coreHealth);
+            registered.Add(coreObject);
+            if (core != null) core.health.Died += _ =>
+            {
+                lost = true;
+                RaiseGameplayEvent(GameplayEventType.CoreDestroyed, coreObject, 0f, "O núcleo da vila foi destruído");
+            };
+        }
+        RegisterTaggedStructures("ProducaoPassiva", StructureKind.Producer, registered);
+        RegisterTaggedStructures("ProducaoAtiva", StructureKind.Producer, registered);
+        RegisterTaggedStructures("ConstrucaoProdutiva", StructureKind.Producer, registered);
+        RegisterTaggedStructures("ConstrucaoServico", StructureKind.Producer, registered);
+        RegisterTaggedStructures("Moradia", StructureKind.Producer, registered);
+        RegisterTaggedStructures("ConstrucaoDefensiva", StructureKind.Tower, registered);
+        RegisterTaggedStructures("Muro", StructureKind.Wall, registered);
+        RegisterTaggedStructures("Cerca", StructureKind.Wall, registered);
+        RegisterTaggedStructures("Destrocos", StructureKind.Wall, registered);
+
+        grid.Recalc();
+        float cs = grid.cellSize;
+        cursor = Prim(PrimitiveType.Cube, Vector3.zero, new Vector3(cs, 0.1f, cs), Color.green);
+        cursor.name = "BuildPreview";
+        CreateBuildAreaOutline();
+        CreatePreviewOutline();
+    }
+
+    void CreateBuildAreaOutline()
+    {
+        var outlineObject = new GameObject("BuildAreaOutline");
+        buildAreaOutline = outlineObject.AddComponent<LineRenderer>();
+        buildAreaOutline.useWorldSpace = true;
+        buildAreaOutline.loop = true;
+        buildAreaOutline.positionCount = 65;
+        buildAreaOutline.startWidth = buildAreaOutline.endWidth = 0.45f;
+        buildAreaOutline.startColor = buildAreaOutline.endColor = new Color(0.3f, 0.95f, 0.5f, 0.8f);
+        buildAreaOutline.material = lineMaterial != null
+            ? new Material(lineMaterial)
+            : new Material(Shader.Find("Sprites/Default"));
+
+        var nextOutlineObject = new GameObject("NextBuildAreaOutline");
+        nextBuildAreaOutline = nextOutlineObject.AddComponent<LineRenderer>();
+        nextBuildAreaOutline.useWorldSpace = true;
+        nextBuildAreaOutline.loop = true;
+        nextBuildAreaOutline.positionCount = 65;
+        nextBuildAreaOutline.startWidth = nextBuildAreaOutline.endWidth = 0.22f;
+        nextBuildAreaOutline.startColor = nextBuildAreaOutline.endColor = new Color(1f, 0.72f, 0.18f, 0.78f);
+        nextBuildAreaOutline.material = lineMaterial != null
+            ? new Material(lineMaterial)
+            : new Material(Shader.Find("Sprites/Default"));
+        RefreshBuildAreaOutline();
+    }
+
+    void RefreshBuildAreaOutline()
+    {
+        if (buildAreaOutline == null || buildArea == null) return;
+        bool showBuildArea = !night && !combatCameraMode;
+        buildAreaOutline.enabled = showBuildArea;
+        nextBuildAreaOutline.enabled = showBuildArea && buildArea.CanExpand;
+        if (Mathf.Approximately(shownBuildRadius, buildArea.Radius))
+        {
+            return;
+        }
+        shownBuildRadius = buildArea.Radius;
+        Vector3 center = buildArea.Center.position;
+        for (int i = 0; i < buildAreaOutline.positionCount; i++)
+        {
+            float angle = i / (float)(buildAreaOutline.positionCount - 1) * Mathf.PI * 2f;
+            buildAreaOutline.SetPosition(i, new Vector3(center.x + Mathf.Cos(angle) * shownBuildRadius,
+                grid.transform.position.y + 0.16f, center.z + Mathf.Sin(angle) * shownBuildRadius));
+            float nextRadius = shownBuildRadius + buildArea.radiusPerUpgrade;
+            nextBuildAreaOutline.SetPosition(i, new Vector3(center.x + Mathf.Cos(angle) * nextRadius,
+                grid.transform.position.y + 0.12f, center.z + Mathf.Sin(angle) * nextRadius));
+        }
+    }
+
+    void CreatePreviewOutline()
+    {
+        var outline = new GameObject("BuildPreviewOutline");
+        previewOutline = outline.AddComponent<LineRenderer>();
+        previewOutline.useWorldSpace = true;
+        previewOutline.loop = false;
+        previewOutline.positionCount = 5;
+        previewOutline.startWidth = previewOutline.endWidth = 0.16f;
+        previewOutline.material = lineMaterial != null ? new Material(lineMaterial) : new Material(Shader.Find("Sprites/Default"));
+        previewOutline.enabled = false;
+    }
+
+    void UpdatePreviewOutline(Vector3 center, Vector3 footprint, Quaternion rotation, Color color)
+    {
+        if (previewOutline == null) return;
+        previewOutline.startColor = previewOutline.endColor = color;
+        float halfX = footprint.x * 0.5f;
+        float halfZ = footprint.z * 0.5f;
+        Vector3[] corners =
+        {
+            new Vector3(-halfX, 0f, -halfZ), new Vector3(-halfX, 0f, halfZ),
+            new Vector3(halfX, 0f, halfZ), new Vector3(halfX, 0f, -halfZ),
+            new Vector3(-halfX, 0f, -halfZ)
+        };
+        for (int i = 0; i < corners.Length; i++)
+        {
+            Vector3 world = center + rotation * corners[i];
+            world.y = grid.transform.position.y + 0.15f;
+            previewOutline.SetPosition(i, world);
+        }
+    }
+
+    void RegisterTaggedStructures(string tag, StructureKind kind, HashSet<GameObject> registered)
+    {
+        foreach (var go in GameObject.FindGameObjectsWithTag(tag))
+        {
+            if (go == null || registered.Contains(go)) continue;
+            RegisterSceneStructure(go, kind, 120f);
+            registered.Add(go);
+        }
+    }
+
+    Structure RegisterSceneStructure(GameObject go, StructureKind kind, float maxHealth)
+    {
+        if (go == null) return null;
+        var health = go.GetComponent<Health>();
+        if (health == null) health = go.AddComponent<Health>();
+        health.Setup(maxHealth);
+        var structure = go.GetComponent<Structure>();
+        if (structure == null) structure = go.AddComponent<Structure>();
+        if (!Structure.All.Contains(structure)) Structure.All.Add(structure);
+        structure.kind = kind;
+        structure.health = health;
+        if (!TryGetStructureBounds(go, out Bounds bounds))
+            bounds = new Bounds(go.transform.position, go.transform.lossyScale);
+        grid.SetFootprint(structure, bounds);
+        health.Damaged += (h, amount) => RaiseGameplayEvent(GameplayEventType.StructureAttacked, go, amount,
+            $"{go.name} recebeu {amount:0.#} dano ({h.current:0.#}/{h.max:0.#} vida)");
+        health.Died += _ => RaiseGameplayEvent(GameplayEventType.StructureDestroyed, go, 0f, $"{go.name} foi destruída");
+        return structure;
+    }
+
+    bool TryGetStructureBounds(GameObject go, out Bounds bounds)
+    {
+        var collider = go.GetComponent<Collider>();
+        if (collider != null && collider.enabled && collider.gameObject.activeInHierarchy)
+        {
+            bounds = collider.bounds;
+            return true;
+        }
+
+        var renderer = go.GetComponent<Renderer>();
+        if (renderer == null) renderer = go.GetComponentInChildren<Renderer>();
+        if (renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy)
+        {
+            bounds = renderer.bounds;
+            return true;
+        }
+
+        bounds = default;
+        return false;
     }
 
     void BuildWorld()
@@ -255,14 +485,28 @@ public class Game : MonoBehaviour
     // Cria qualquer construção a partir de um BuildingData.
     Structure MakeStructure(BuildingData d, Vector2Int cell)
     {
-        float cs = grid.cellSize;
-        Vector3 p = grid.CellToWorld(cell);
+        return MakeStructureAt(d, grid.CellToWorld(cell), Quaternion.identity, true);
+    }
+
+    Structure MakeStructureAt(BuildingData d, Vector3 groundPosition, Quaternion rotation, bool scaleByCell)
+    {
+        float cs = scaleByCell ? grid.cellSize : 1f;
         bool tall = d.shape == PrimitiveType.Cylinder || d.shape == PrimitiveType.Capsule;   // altura = 2 * escala Y
         float centerY = d.size.y * (tall ? 2f : 1f) / 2f;
 
-        var go = Prim(d.shape, p + Vector3.up * centerY,
+        var go = Prim(d.shape, groundPosition + Vector3.up * centerY,
                       new Vector3(d.size.x * cs, d.size.y, d.size.z * cs), d.color);
         go.name = d.displayName;
+        go.transform.rotation = rotation;
+        // Player-built walls are fences, separate from the ancient wall ring in the scene.
+        go.layer = LayerMask.NameToLayer("Structures");
+        go.AddComponent<BoxCollider>();
+        if (d.kind == StructureKind.Core) go.tag = "Nucleo";
+        else if (d.kind == StructureKind.Wall) go.tag = "Cerca";
+        else if (d.kind == StructureKind.Tower) go.tag = "ConstrucaoDefensiva";
+        else if (d.productionMode == ProductionMode.Active) go.tag = "ProducaoAtiva";
+        else if (d.productionMode == ProductionMode.Passive || d.amount > 0) go.tag = "ProducaoPassiva";
+        else go.tag = "ConstrucaoProdutiva";
 
         if (d.kind == StructureKind.Tower) go.AddComponent<Tower>().Setup(d);
         if (d.amount > 0)
@@ -275,7 +519,7 @@ public class Game : MonoBehaviour
         h.Setup(d.maxHealth);
         var s = go.AddComponent<Structure>();
         s.kind = d.kind;
-        s.cell = cell;
+        s.cell = grid.WorldToCell(groundPosition);
         s.health = h;
         s.data = d;
         h.Damaged += (health, amount) => RaiseGameplayEvent(GameplayEventType.StructureAttacked, go, amount,
@@ -289,25 +533,79 @@ public class Game : MonoBehaviour
                 lost = true;
             }
         };
-        grid.Set(cell, s);
+        var collider = go.GetComponent<Collider>();
+        grid.SetFootprint(s, collider.bounds);
         RaiseGameplayEvent(GameplayEventType.StructureBuilt, go, 0f, $"Construída: {d.displayName}");
         return s;
     }
 
     // ---------- Menu (retângulos usados tanto para desenhar quanto para detectar clique) ----------
+    BuildingMenuCategory ResolveMenuCategory(BuildingData building)
+    {
+        if (building.menuCategory != BuildingMenuCategory.Automatic) return building.menuCategory;
+        if (building.kind == StructureKind.Wall || building.kind == StructureKind.Tower) return BuildingMenuCategory.Defense;
+        if (building.kind == StructureKind.Producer && building.amount > 0) return BuildingMenuCategory.Production;
+        if (building.kind == StructureKind.Producer) return BuildingMenuCategory.Services;
+        return BuildingMenuCategory.Other;
+    }
+
+    string MenuCategoryLabel(BuildingMenuCategory category)
+    {
+        switch (category)
+        {
+            case BuildingMenuCategory.Defense: return "Defesas";
+            case BuildingMenuCategory.Production: return "Produção";
+            case BuildingMenuCategory.Services: return "Serviços";
+            case BuildingMenuCategory.Housing: return "Moradia";
+            case BuildingMenuCategory.Utility: return "Utilidades";
+            default: return "Outros";
+        }
+    }
+
+    void BuildMenuCategories()
+    {
+        menuCategories.Clear();
+        BuildingMenuCategory[] order =
+        {
+            BuildingMenuCategory.Defense, BuildingMenuCategory.Production, BuildingMenuCategory.Services,
+            BuildingMenuCategory.Housing, BuildingMenuCategory.Utility, BuildingMenuCategory.Other
+        };
+        foreach (var category in order)
+        {
+            for (int i = 0; i < menu.Count; i++)
+            {
+                if (ResolveMenuCategory(menu[i]) != category) continue;
+                menuCategories.Add(category);
+                break;
+            }
+        }
+        if (menuCategories.Count > 0) SelectMenuCategory(menuCategories[0]);
+    }
+
+    void SelectMenuCategory(BuildingMenuCategory category)
+    {
+        activeMenuCategory = category;
+        activeMenu.Clear();
+        for (int i = 0; i < menu.Count; i++)
+            if (ResolveMenuCategory(menu[i]) == category) activeMenu.Add(menu[i]);
+        selected = 0;
+        menuPage = 0;
+    }
+
+    int CardsPerPage => Mathf.Max(1, Mathf.FloorToInt((Screen.width - 90f) / (CardW + CardGap)));
+    int VisibleMenuStart => menuPage * CardsPerPage;
+    int VisibleMenuCount => Mathf.Min(CardsPerPage, Mathf.Max(0, activeMenu.Count - VisibleMenuStart));
+
     Rect CardRect(int i)
     {
-        float total = menu.Count * (CardW + CardGap) - CardGap;
+        float total = VisibleMenuCount * (CardW + CardGap) - CardGap;
         float x0 = (Screen.width - total) / 2f;
-        return new Rect(x0 + i * (CardW + CardGap), Screen.height - 134f, CardW, CardH);
+        return new Rect(x0 + i * (CardW + CardGap), Screen.height - 130f, CardW, CardH);
     }
 
     Rect MenuArea()
     {
-        if (menu.Count == 0) return new Rect(0, 0, 0, 0);
-        var first = CardRect(0);
-        var last = CardRect(menu.Count - 1);
-        return new Rect(first.x - 8f, first.y - 8f, last.xMax - first.x + 16f, CardH + 16f);
+        return new Rect(0f, Screen.height - 204f, Screen.width, 204f);
     }
 
     static Vector2 GuiMouse(Mouse m)
@@ -318,8 +616,8 @@ public class Game : MonoBehaviour
 
     int CardAt(Vector2 gm)
     {
-        for (int i = 0; i < menu.Count; i++)
-            if (CardRect(i).Contains(gm)) return i;
+        for (int i = 0; i < VisibleMenuCount; i++)
+            if (CardRect(i).Contains(gm)) return VisibleMenuStart + i;
         return -1;
     }
 
@@ -335,20 +633,35 @@ public class Game : MonoBehaviour
 
         if (kb.f3Key.wasPressedThisFrame) showEventLog = !showEventLog;
         if (kb.f1Key.wasPressedThisFrame) SelectNextScenario();
+        if (kb.tabKey.wasPressedThisFrame) combatCameraMode = !combatCameraMode;
+        if (sceneDrivenLayout && kb.cKey.wasPressedThisFrame && core != null)
+            CenterCameraOn(core.transform.position);
 
         if (msgTimer > 0f) { msgTimer -= Time.deltaTime; if (msgTimer <= 0f) msg = ""; }
+        RefreshBuildAreaOutline();
+        menuPage = Mathf.Clamp(menuPage, 0, Mathf.Max(0, (activeMenu.Count - 1) / CardsPerPage));
 
         if (lost) { cursor.SetActive(false); return; }
 
-        for (int i = 0; i < menu.Count && i < 9; i++)
-            if (kb[Key.Digit1 + i].wasPressedThisFrame) selected = i;
+        for (int i = 0; i < VisibleMenuCount && i < 9; i++)
+            if (kb[Key.Digit1 + i].wasPressedThisFrame) selected = VisibleMenuStart + i;
 
         UpdateCameraPan(mouse);
+
+        if (sceneDrivenLayout && !night && !combatCameraMode)
+        {
+            float rotationStep = kb.leftAltKey.isPressed || kb.rightAltKey.isPressed ? 1f
+                : kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed ? 15f : 5f;
+            if (kb.eKey.wasPressedThisFrame) buildRotation = Mathf.Repeat(buildRotation + rotationStep, 360f);
+            if (kb.qKey.wasPressedThisFrame) buildRotation = Mathf.Repeat(buildRotation - rotationStep, 360f);
+            if (kb.gKey.wasPressedThisFrame) snapBuildPosition = !snapBuildPosition;
+        }
 
         if (kb.spaceKey.wasPressedThisFrame && !night) StartCoroutine(RunNight());
 
         Vector2 gm = GuiMouse(mouse);
-        bool overMenu = MenuArea().Contains(gm);
+        bool overMenu = MenuArea().Contains(gm) ||
+            (sceneDrivenLayout && new Rect(0f, 76f, 300f, 70f).Contains(gm));
 
         if (overMenu && mouse.leftButton.wasPressedThisFrame)
         {
@@ -358,14 +671,14 @@ public class Game : MonoBehaviour
 
         UpdateHover(mouse, overMenu);
 
-        if (!night && !overMenu)
+        if (!night && !combatCameraMode && !overMenu)
         {
             if (mouse.leftButton.wasPressedThisFrame) TryBuild();
             if (mouse.rightButton.wasPressedThisFrame) TrySell();
         }
     }
 
-    BuildingData Current => (menu.Count > 0 && selected < menu.Count) ? menu[selected] : null;
+    BuildingData Current => (activeMenu.Count > 0 && selected < activeMenu.Count) ? activeMenu[selected] : null;
 
     bool CellFree(Vector2Int c)
     {
@@ -421,12 +734,75 @@ public class Game : MonoBehaviour
         var cam = Camera.main;
         if (cam == null || grid == null) return;
 
+        Transform panTransform = virtualCamera != null ? virtualCamera.transform : cam.transform;
+        if (combatCameraMode)
+        {
+            Transform followTarget = combatCameraTarget;
+            if (followTarget == null)
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                followTarget = player != null ? player.transform : (core != null ? core.transform : null);
+            }
+            if (followTarget != null)
+            {
+                var followPlane = new Plane(Vector3.up, grid.transform.position);
+                Ray followRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                if (followPlane.Raycast(followRay, out float followDistance))
+                {
+                    Vector3 delta = followTarget.position - followRay.GetPoint(followDistance);
+                    delta.y = 0f;
+                    panTransform.position += delta * (1f - Mathf.Exp(-combatCameraFollowSpeed * Time.unscaledDeltaTime));
+                }
+                draggingBuildCamera = false;
+                return;
+            }
+        }
+
         Vector2 pointer = mouse.position.ReadValue();
         float x = pointer.x <= cameraEdgeSize ? -1f : (pointer.x >= Screen.width - cameraEdgeSize ? 1f : 0f);
         float y = pointer.y <= cameraEdgeSize ? -1f : (pointer.y >= Screen.height - cameraEdgeSize ? 1f : 0f);
+        Vector3 dragShift = Vector3.zero;
+        bool dragged = false;
+        if (!combatCameraMode)
+        {
+            if (Keyboard.current.wKey.isPressed) y += 1f;
+            if (Keyboard.current.sKey.isPressed) y -= 1f;
+            if (Keyboard.current.dKey.isPressed) x += 1f;
+            if (Keyboard.current.aKey.isPressed) x -= 1f;
+
+            float scroll = mouse.scroll.ReadValue().y;
+            if (!Mathf.Approximately(scroll, 0f))
+                SetCameraZoom(cam, Mathf.Clamp(GetCameraZoom(cam) - scroll * buildCameraZoomSpeed * 0.01f,
+                    buildCameraMinZoom, buildCameraMaxZoom));
+
+            if (mouse.middleButton.wasPressedThisFrame)
+            {
+                draggingBuildCamera = true;
+                lastBuildCameraPointer = pointer;
+            }
+            if (mouse.middleButton.wasReleasedThisFrame) draggingBuildCamera = false;
+            if (draggingBuildCamera && mouse.middleButton.isPressed)
+            {
+                Vector2 drag = pointer - lastBuildCameraPointer;
+                lastBuildCameraPointer = pointer;
+                Vector3 rightOnGround = panTransform.right;
+                Vector3 upOnGround = panTransform.up;
+                rightOnGround.y = 0f;
+                upOnGround.y = 0f;
+                float worldPerPixel = GetCameraZoom(cam) * 2f / Mathf.Max(1f, Screen.height);
+                dragShift = -rightOnGround.normalized * drag.x * worldPerPixel
+                    - upOnGround.normalized * drag.y * worldPerPixel;
+                dragged = dragShift.sqrMagnitude > 0f;
+            }
+        }
+        if (dragged)
+        {
+            panTransform.position += dragShift;
+            if (panTransform != cam.transform) cam.transform.position += dragShift;
+            return;
+        }
         if (Mathf.Approximately(x, 0f) && Mathf.Approximately(y, 0f)) return;
 
-        Transform panTransform = virtualCamera != null ? virtualCamera.transform : cam.transform;
         Vector3 right = panTransform.right;
         Vector3 forward = panTransform.forward;
         right.y = 0f;
@@ -439,7 +815,8 @@ public class Game : MonoBehaviour
         Ray centerRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         if (!ground.Raycast(centerRay, out float distance)) return;
         Vector3 center = centerRay.GetPoint(distance);
-        Vector3 nextCenter = center + direction * cameraPanSpeed * Time.unscaledDeltaTime;
+        bool shiftPan = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
+        Vector3 nextCenter = center + direction * cameraPanSpeed * (shiftPan ? 3f : 1f) * Time.unscaledDeltaTime;
         float halfWidth = grid.width * grid.cellSize * 0.5f;
         float halfHeight = grid.height * grid.cellSize * 0.5f;
         nextCenter.x = Mathf.Clamp(nextCenter.x, grid.transform.position.x - halfWidth, grid.transform.position.x + halfWidth);
@@ -450,6 +827,36 @@ public class Game : MonoBehaviour
         if (panTransform != cam.transform) cam.transform.position += shift;
     }
 
+    void CenterCameraOn(Vector3 worldPosition)
+    {
+        var cam = Camera.main;
+        if (cam == null || grid == null) return;
+        Transform panTransform = virtualCamera != null ? virtualCamera.transform : cam.transform;
+        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        var ground = new Plane(Vector3.up, grid.transform.position);
+        if (!ground.Raycast(ray, out float distance)) return;
+        Vector3 shift = worldPosition - ray.GetPoint(distance);
+        shift.y = 0f;
+        panTransform.position += shift;
+        if (panTransform != cam.transform) cam.transform.position += shift;
+    }
+
+    float GetCameraZoom(Camera cam)
+    {
+        return virtualCamera != null ? virtualCamera.Lens.OrthographicSize : cam.orthographicSize;
+    }
+
+    void SetCameraZoom(Camera cam, float size)
+    {
+        if (virtualCamera != null)
+        {
+            var lens = virtualCamera.Lens;
+            lens.OrthographicSize = size;
+            virtualCamera.Lens = lens;
+        }
+        else cam.orthographicSize = size;
+    }
+
     void UpdateHover(Mouse mouse, bool overMenu)
     {
         var cam = Camera.main;
@@ -458,30 +865,134 @@ public class Game : MonoBehaviour
         var plane = new Plane(Vector3.up, grid.transform.position);
         if (plane.Raycast(ray, out float d))
         {
-            hoverCell = grid.WorldToCell(ray.GetPoint(d));
-            bool show = grid.InBounds(hoverCell) && !night && !overMenu && Current != null;
+            hoverPosition = ray.GetPoint(d);
+            if (sceneDrivenLayout && snapBuildPosition && !Keyboard.current.leftAltKey.isPressed && !Keyboard.current.rightAltKey.isPressed)
+            {
+                hoverPosition.x = Mathf.Round(hoverPosition.x / buildPlacementStep) * buildPlacementStep;
+                hoverPosition.z = Mathf.Round(hoverPosition.z / buildPlacementStep) * buildPlacementStep;
+            }
+            hoverCell = grid.WorldToCell(hoverPosition);
+            bool show = grid.InBounds(hoverCell) && !night && !combatCameraMode && !overMenu && Current != null;
             cursor.SetActive(show);
+            if (previewOutline != null) previewOutline.enabled = show;
             if (show)
             {
                 var cur = Current;
-                bool ok = CellFree(hoverCell) && wallet.CanAfford(cur.woodCost, cur.suppliesCost);
-                cursor.transform.position = grid.CellToWorld(hoverCell) + Vector3.up * 0.06f;
+                SpecialBuildPoint slot;
+                bool placeable = CanPlace(cur, hoverPosition, out slot);
+                bool ok = placeable && wallet.CanAfford(cur.woodCost, cur.suppliesCost);
+                Vector3 previewPosition = slot != null ? slot.transform.position : hoverPosition;
+                if (!sceneDrivenLayout) previewPosition = grid.CellToWorld(hoverCell);
+                cursor.transform.position = previewPosition + Vector3.up * 0.06f;
+                cursor.transform.rotation = Quaternion.Euler(0f, sceneDrivenLayout ? buildRotation : 0f, 0f);
+                cursor.transform.localScale = sceneDrivenLayout
+                    ? new Vector3(Mathf.Max(0.5f, cur.size.x), 0.12f, Mathf.Max(0.5f, cur.size.z))
+                    : new Vector3(grid.cellSize * 0.95f, 0.1f, grid.cellSize * 0.95f);
                 cursor.GetComponent<Renderer>().material.color =
                     ok ? new Color(0.2f, 1f, 0.3f) : new Color(1f, 0.2f, 0.2f);
+                UpdatePreviewOutline(cursor.transform.position, cursor.transform.localScale,
+                    cursor.transform.rotation, ok ? new Color(0.2f, 1f, 0.3f) : new Color(1f, 0.2f, 0.2f));
             }
         }
-        else cursor.SetActive(false);
+        else
+        {
+            cursor.SetActive(false);
+            if (previewOutline != null) previewOutline.enabled = false;
+        }
     }
 
     void TryBuild()
     {
         var d = Current;
         if (d == null) return;
-        if (!CellFree(hoverCell)) { Say("Não dá para construir aqui."); return; }
+        SpecialBuildPoint slot;
+        if (!CanPlace(d, hoverPosition, out slot)) { Say("Não dá para construir aqui."); return; }
         if (!wallet.Spend(d.woodCost, d.suppliesCost)) { Say("Recursos insuficientes."); return; }
 
-        MakeStructure(d, hoverCell);
+        if (sceneDrivenLayout)
+        {
+            Vector3 position = slot != null ? slot.transform.position : hoverPosition;
+            Structure placed = MakeStructureAt(d, position, Quaternion.Euler(0f, buildRotation, 0f), false);
+            if (slot != null)
+            {
+                slot.occupant = placed;
+                slot.occupied = true;
+            }
+        }
+        else MakeStructure(d, hoverCell);
         grid.Recalc();
+    }
+
+    bool CanPlace(BuildingData data, Vector3 position, out SpecialBuildPoint matchedSlot)
+    {
+        matchedSlot = null;
+        if (!sceneDrivenLayout) return CellFree(grid.WorldToCell(position));
+        if (buildArea == null || data == null) return false;
+
+        float width = data.size.x;
+        float depth = data.size.z;
+        float radius = Mathf.Sqrt(width * width + depth * depth) * 0.5f;
+        Vector3 candidate = position;
+        if (data.requiresSpecialBuildPoint)
+        {
+            float bestDistance = float.MaxValue;
+            foreach (var point in specialBuildPoints)
+            {
+                if (point == null || point.occupied || point.requiredBuildingId != data.specialBuildPointId) continue;
+                Vector2 delta = new Vector2(position.x - point.transform.position.x, position.z - point.transform.position.z);
+                if (delta.magnitude > point.activationRadius || delta.magnitude >= bestDistance) continue;
+                bestDistance = delta.magnitude;
+                matchedSlot = point;
+            }
+            if (matchedSlot == null) return false;
+            candidate = matchedSlot.transform.position;
+        }
+
+        if (!buildArea.Contains(candidate, radius)) return false;
+        int solidMask = (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12);
+        bool tall = data.shape == PrimitiveType.Cylinder || data.shape == PrimitiveType.Capsule;
+        float height = data.size.y * (tall ? 2f : 1f);
+        Vector3 halfExtents = new Vector3(width * 0.5f, Mathf.Max(0.5f, height * 0.5f), depth * 0.5f);
+        Vector3 boxCenter = candidate + Vector3.up * halfExtents.y;
+        Quaternion rotation = Quaternion.Euler(0f, buildRotation, 0f);
+        Physics.SyncTransforms();
+        var hits = Physics.OverlapBox(boxCenter, halfExtents, rotation, solidMask, QueryTriggerInteraction.Collide);
+        return hits.Length == 0 && !OverlapsExistingStructure(candidate, width, height, depth, rotation);
+    }
+
+    bool OverlapsExistingStructure(Vector3 candidate, float width, float height, float depth, Quaternion rotation)
+    {
+        Vector3 candidateRight3 = rotation * Vector3.right;
+        Vector3 candidateForward3 = rotation * Vector3.forward;
+        Vector2 candidateRight = new Vector2(candidateRight3.x, candidateRight3.z);
+        Vector2 candidateForward = new Vector2(candidateForward3.x, candidateForward3.z);
+        Vector2 center = new Vector2(candidate.x, candidate.z);
+        Vector2[] axes = { candidateRight, candidateForward, Vector2.right, Vector2.up };
+        float candidateTop = candidate.y + height;
+
+        foreach (var structure in Structure.All)
+        {
+            if (structure == null) continue;
+            if (!TryGetStructureBounds(structure.gameObject, out Bounds bounds)) continue;
+            if (bounds.max.y <= candidate.y + 0.01f || bounds.min.y >= candidateTop - 0.01f) continue;
+
+            Vector2 otherCenter = new Vector2(bounds.center.x, bounds.center.z);
+            Vector2 delta = otherCenter - center;
+            bool separated = false;
+            foreach (Vector2 axis in axes)
+            {
+                float candidateRadius = width * 0.5f * Mathf.Abs(Vector2.Dot(candidateRight, axis))
+                    + depth * 0.5f * Mathf.Abs(Vector2.Dot(candidateForward, axis));
+                float otherRadius = bounds.extents.x * Mathf.Abs(axis.x) + bounds.extents.z * Mathf.Abs(axis.y);
+                if (Mathf.Abs(Vector2.Dot(delta, axis)) >= candidateRadius + otherRadius - 0.01f)
+                {
+                    separated = true;
+                    break;
+                }
+            }
+            if (!separated) return true;
+        }
+        return false;
     }
 
     void TrySell()
@@ -526,6 +1037,7 @@ public class Game : MonoBehaviour
         if (night || lost) yield break;
 
         night = true;
+        combatCameraMode = true;
         round++;
         RaiseGameplayEvent(GameplayEventType.NightStarted, null, round, $"Noite {round} começou");
         int groups = Mathf.Min(initialGroups + (round - 1) / Mathf.Max(1, groupsPerRounds), maxGroups);
@@ -547,17 +1059,50 @@ public class Game : MonoBehaviour
             }
         }
 
-        if (!lost)
-            yield return new WaitUntil(() => Enemy.All.Count == 0 || lost);
+        bool endedByDesertion = false;
+        while (!lost && Enemy.All.Count > 0)
+        {
+            if (AllRemainingEnemiesAreDeserters())
+            {
+                endedByDesertion = true;
+                break;
+            }
+            yield return null;
+        }
+
+        if (endedByDesertion)
+        {
+            foreach (var enemy in new List<Enemy>(Enemy.All))
+                if (enemy != null && enemy.state == EState.Flee) Destroy(enemy.gameObject);
+            yield return null;
+        }
 
         night = false;
+        combatCameraMode = false;
         if (lost) yield break;
 
         int sup = dawnSuppliesBase + round;
         wallet.Add(ResourceType.Wood, dawnWood);
         wallet.Add(ResourceType.Supplies, sup);
-        RaiseGameplayEvent(GameplayEventType.DawnReached, null, round, $"Amanheceu após a noite {round}");
-        Say($"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
+        string dawnDetails = endedByDesertion
+            ? $"Amanheceu após a deserção dos inimigos restantes na noite {round}"
+            : $"Amanheceu após a noite {round}";
+        RaiseGameplayEvent(GameplayEventType.DawnReached, null, round, dawnDetails);
+        Say(endedByDesertion
+            ? $"Os inimigos restantes fugiram. Amanheceu! +{sup} Suprimentos e +{dawnWood} Madeira."
+            : $"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
+    }
+
+    bool AllRemainingEnemiesAreDeserters()
+    {
+        bool foundEnemy = false;
+        foreach (var enemy in Enemy.All)
+        {
+            if (enemy == null) continue;
+            foundEnemy = true;
+            if (enemy.state != EState.Flee) return false;
+        }
+        return foundEnemy;
     }
 
     IEnumerator SpawnGroup(Vector2Int cell, int commons, bool tank)
@@ -594,6 +1139,7 @@ public class Game : MonoBehaviour
 
         var go = Prim(shape, pos, scale, Color.red);
         go.name = type + "_" + pers;
+        go.layer = LayerMask.NameToLayer("Enemies");
         go.AddComponent<Health>();
         var e = go.AddComponent<Enemy>();
         e.Init(type, pers, brav, gp);
@@ -612,26 +1158,82 @@ public class Game : MonoBehaviour
         return parts.Count > 0 ? string.Join("  ", parts) : "Grátis";
     }
 
+    void DrawStructureLabels()
+    {
+        var cam = Camera.main;
+        if (cam == null) return;
+        var labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 12,
+            fontStyle = FontStyle.Bold
+        };
+        labelStyle.normal.textColor = Color.white;
+        foreach (var structure in Structure.All)
+        {
+            if (structure == null || structure.data != null
+                || (structure.kind == StructureKind.Wall && structure.data == null)) continue;
+            var renderer = structure.GetComponent<Renderer>();
+            Vector3 worldPosition = renderer != null
+                ? renderer.bounds.center + Vector3.up * (renderer.bounds.extents.y + 0.35f)
+                : structure.transform.position + Vector3.up * 2f;
+            Vector3 screenPosition = cam.WorldToScreenPoint(worldPosition);
+            if (screenPosition.z <= 0f || screenPosition.x < 0f || screenPosition.x > Screen.width
+                || screenPosition.y < 0f || screenPosition.y > Screen.height) continue;
+
+            string label = structure.data != null ? structure.data.displayName : structure.gameObject.name;
+            Rect rect = new Rect(screenPosition.x - 68f, Screen.height - screenPosition.y - 13f, 136f, 24f);
+            GUI.color = new Color(0.025f, 0.03f, 0.04f, 0.78f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            GUI.Label(rect, label, labelStyle);
+        }
+    }
+
     void OnGUI()
     {
         var st = new GUIStyle(GUI.skin.label) { fontSize = 16 };
         st.normal.textColor = Color.white;
+        bool showConstructionUI = !night && !combatCameraMode;
+
+        if (sceneDrivenLayout && showConstructionUI) DrawStructureLabels();
 
         float coreHp = core != null ? core.health.current : 0f;
+        int displayedRound = night || lost ? round : round + 1;
         GUI.Label(new Rect(10, 8, 1400, 26),
-            $"Rodada {round}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Abates: {killed}   Desertores: {deserted}", st);
+            $"Rodada {displayedRound}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Abates: {killed}   Desertores: {deserted}", st);
 
         GUI.Label(new Rect(10, 32, 1400, 26), night
-            ? "Sobreviva à noite..."
-            : "Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
+            ? $"Sobreviva à noite...  |  Câmera de combate [Tab]"
+            : combatCameraMode
+                ? "Modo combate  |  Câmera seguindo o jogador [Tab: modo construção]"
+            : sceneDrivenLayout
+                ? $"Clique esq.: construir  |  Clique dir.: vender  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  Câmera: {(combatCameraMode ? "combate" : "construção")} [Tab]  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar"
+                : "Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
         GUI.Label(new Rect(10, 56, 1400, 26), msg, st);
+        if (sceneDrivenLayout && showConstructionUI && buildArea != null)
+        {
+            GUI.Label(new Rect(10, 82, 510, 24), $"Área: {buildArea.Radius:0} m ({buildArea.expansionLevel}/{buildArea.maxExpansionLevel})  |  Verde: atual, amarelo: próxima expansão", st);
+            if (!night && buildArea.CanExpand && GUI.Button(new Rect(10, 108, 230, 30),
+                    $"Expandir área ({buildArea.NextWoodCost} M / {buildArea.NextSuppliesCost} S)"))
+            {
+                if (buildArea.TryExpand(wallet)) Say("A área de construção foi expandida.");
+                else Say("Recursos insuficientes para expandir a área.");
+            }
+            else if (!buildArea.CanExpand)
+                GUI.Label(new Rect(10, 108, 230, 24), "Área no tamanho máximo", st);
+        }
         string scenarioLabel = scenario != null ? scenario.displayName : "Inspector";
         if (scenarioChangePending && scenarios.Count > 0)
         {
             var pending = scenarios.Find(s => s.name == selectedScenarioName);
             if (pending != null) scenarioLabel = $"{scenarioLabel} -> {pending.displayName} (R para aplicar)";
         }
-        GUI.Label(new Rect(10, 80, 900, 22), $"Cenário: {scenarioLabel}   Mapa: {grid.width} x {grid.height}   Entradas: {spawns.Count}", st);
+        if (!sceneDrivenLayout || showConstructionUI)
+        {
+            float scenarioY = sceneDrivenLayout ? 144f : 80f;
+            GUI.Label(new Rect(10, scenarioY, 1100, 22), $"Cenário: {scenarioLabel}   Mapa: {grid.width} x {grid.height}   Entradas: {spawns.Count}", st);
+        }
 
         if (showEventLog)
         {
@@ -651,19 +1253,43 @@ public class Game : MonoBehaviour
             }
         }
 
-        if (scenario != null && !string.IsNullOrEmpty(scenario.instructions))
+        if (!sceneDrivenLayout && scenario != null && !string.IsNullOrEmpty(scenario.instructions))
             GUI.Label(new Rect(10, 104, 700, 38), scenario.instructions, st);
 
-        // Menu de construção
+        if (showConstructionUI)
+        {
+        // Menu de construção categorizado, com paginação horizontal para permitir crescimento.
         var nameSt = new GUIStyle(GUI.skin.label) { fontSize = 15, fontStyle = FontStyle.Bold };
         var smallSt = new GUIStyle(GUI.skin.label) { fontSize = 12 };
-        for (int i = 0; i < menu.Count; i++)
+        GUI.color = new Color(0.035f, 0.045f, 0.06f, 0.93f);
+        GUI.DrawTexture(new Rect(0f, Screen.height - 207f, Screen.width, 207f), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+
+        float categoryWidth = menuCategories.Count > 0
+            ? Mathf.Min(150f, (Screen.width - 28f) / menuCategories.Count) : 0f;
+        for (int i = 0; i < menuCategories.Count; i++)
         {
-            var d = menu[i];
+            var category = menuCategories[i];
+            int count = 0;
+            for (int b = 0; b < menu.Count; b++) if (ResolveMenuCategory(menu[b]) == category) count++;
+            Rect tab = new Rect(14f + i * categoryWidth, Screen.height - 198f, categoryWidth - 5f, 28f);
+            bool wasSelected = category == activeMenuCategory;
+            if (GUI.Toggle(tab, wasSelected, $"{MenuCategoryLabel(category)} ({count})", GUI.skin.button) && !wasSelected)
+                SelectMenuCategory(category);
+        }
+
+        if (menuPage > 0 && GUI.Button(new Rect(8f, Screen.height - 125f, 34f, 58f), "‹")) menuPage--;
+        if (VisibleMenuStart + VisibleMenuCount < activeMenu.Count &&
+            GUI.Button(new Rect(Screen.width - 42f, Screen.height - 125f, 34f, 58f), "›")) menuPage++;
+
+        for (int i = 0; i < VisibleMenuCount; i++)
+        {
+            int buildingIndex = VisibleMenuStart + i;
+            var d = activeMenu[buildingIndex];
             var r = CardRect(i);
             bool afford = wallet.CanAfford(d.woodCost, d.suppliesCost);
 
-            GUI.color = i == selected ? new Color(0.22f, 0.42f, 0.28f, 0.95f) : new Color(0.1f, 0.1f, 0.13f, 0.88f);
+            GUI.color = buildingIndex == selected ? new Color(0.22f, 0.42f, 0.28f, 0.95f) : new Color(0.1f, 0.1f, 0.13f, 0.88f);
             GUI.DrawTexture(r, Texture2D.whiteTexture);
             GUI.color = d.color;
             GUI.DrawTexture(new Rect(r.x + 6, r.y + 8, 10, r.height - 16), Texture2D.whiteTexture);
@@ -683,8 +1309,18 @@ public class Game : MonoBehaviour
             GUI.Label(new Rect(r.x + 22, r.y + 42, r.width - 26, 18), extra, smallSt);
         }
 
+        if (sceneDrivenLayout && !night)
+        {
+            var controlsStyle = new GUIStyle(GUI.skin.label) { fontSize = 12 };
+            controlsStyle.normal.textColor = new Color(0.8f, 0.84f, 0.9f);
+            GUI.Label(new Rect(14f, Screen.height - 29f, Screen.width - 28f, 22f),
+                "Q/E: girar 5° (Alt: 1°, Shift: 15°)  |  G: encaixe 0,5 m  |  Alt: posicionamento livre  |  Shift + mover: pan rápido  |  C: centralizar na Igreja",
+                controlsStyle);
+        }
+        }
+
         GUI.Label(new Rect(10, Screen.height - 54, 1600, 26),
-            "Esfera = Objetivo (só quer o Core)   Cubo = Caçador (vai atrás de torres)   Cilindro grande = Tank   Bolinha branca = líder", st);
+            "Esfera = Objective (ataca estruturas próximas)   Cubo = Hunter (prioriza torres)   Cilindro grande = Tank (prioriza o Núcleo; rompe muros/cercas conforme a rota)   Bolinha branca = líder", st);
         GUI.Label(new Rect(10, Screen.height - 30, 1600, 26),
             "Vermelho = Fanático   Laranja = Cobiçoso   Rosa = Covarde   Cinza = desertor", st);
 

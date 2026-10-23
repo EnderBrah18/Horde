@@ -136,7 +136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &14150849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,7 +162,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 60
-    OrthographicSize: 30.1
+    OrthographicSize: 37.5
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -188,13 +188,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 14150848}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
+  m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
   m_LocalPosition: {x: 0, y: 119.6, z: -83.7}
   m_LocalScale: {x: 0, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 55, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}
 --- !u!114 &14150851
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -233,7 +233,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &28524614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -353,7 +353,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 30.1
+  orthographic size: 37.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -377,7 +377,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 28524613}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
+  m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
   m_LocalPosition: {x: 0, y: 119.6, z: -83.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -523,9 +523,9 @@ GameObject:
   - component: {fileID: 66350161}
   - component: {fileID: 66350160}
   - component: {fileID: 66350159}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_2 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -539,7 +539,7 @@ Transform:
   m_GameObject: {fileID: 66350157}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.09001656, z: -0, w: 0.99594027}
-  m_LocalPosition: {x: -135.77098, y: 0.32, z: -26.393152}
+  m_LocalPosition: {x: -135.471, y: 0.32, z: -31.093151}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -635,9 +635,9 @@ GameObject:
   - component: {fileID: 144590876}
   - component: {fileID: 144590875}
   - component: {fileID: 144590874}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_09 (1)
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -747,9 +747,9 @@ GameObject:
   - component: {fileID: 203173097}
   - component: {fileID: 203173096}
   - component: {fileID: 203173095}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_1 (4)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -763,7 +763,7 @@ Transform:
   m_GameObject: {fileID: 203173093}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7227473, z: -0, w: 0.6911124}
-  m_LocalPosition: {x: -24.664719, y: 0.32, z: -153.73961}
+  m_LocalPosition: {x: -29.5, y: 0.32, z: -153.9}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -859,9 +859,9 @@ GameObject:
   - component: {fileID: 407725754}
   - component: {fileID: 407725753}
   - component: {fileID: 407725752}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_1 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -875,7 +875,7 @@ Transform:
   m_GameObject: {fileID: 407725750}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.11901835, z: -0, w: 0.9928921}
-  m_LocalPosition: {x: -135.98308, y: 0.2, z: -37.0915}
+  m_LocalPosition: {x: -135.68309, y: 0.2, z: -41.791496}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -971,9 +971,9 @@ GameObject:
   - component: {fileID: 412803763}
   - component: {fileID: 412803762}
   - component: {fileID: 412803761}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_3 (3)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1083,9 +1083,9 @@ GameObject:
   - component: {fileID: 531822665}
   - component: {fileID: 531822664}
   - component: {fileID: 531822663}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_1 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1195,9 +1195,9 @@ GameObject:
   - component: {fileID: 554783640}
   - component: {fileID: 554783639}
   - component: {fileID: 554783638}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_3 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1307,9 +1307,9 @@ GameObject:
   - component: {fileID: 558681538}
   - component: {fileID: 558681537}
   - component: {fileID: 558681536}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_01 (2)
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1419,9 +1419,9 @@ GameObject:
   - component: {fileID: 650414820}
   - component: {fileID: 650414819}
   - component: {fileID: 650414818}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_01 (1)
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1531,9 +1531,9 @@ GameObject:
   - component: {fileID: 750098527}
   - component: {fileID: 750098526}
   - component: {fileID: 750098525}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Mercador
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1643,9 +1643,9 @@ GameObject:
   - component: {fileID: 759969686}
   - component: {fileID: 759969685}
   - component: {fileID: 759969684}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_1 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1755,9 +1755,9 @@ GameObject:
   - component: {fileID: 815868568}
   - component: {fileID: 815868567}
   - component: {fileID: 815868566}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_2 (3)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1867,9 +1867,9 @@ GameObject:
   - component: {fileID: 871035528}
   - component: {fileID: 871035527}
   - component: {fileID: 871035526}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_07 (1)
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1979,9 +1979,9 @@ GameObject:
   - component: {fileID: 894456444}
   - component: {fileID: 894456443}
   - component: {fileID: 894456442}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_1 (3)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2091,9 +2091,9 @@ GameObject:
   - component: {fileID: 932054007}
   - component: {fileID: 932054006}
   - component: {fileID: 932054005}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Estalagem
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2203,9 +2203,9 @@ GameObject:
   - component: {fileID: 939067954}
   - component: {fileID: 939067953}
   - component: {fileID: 939067952}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Muro
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2315,9 +2315,9 @@ GameObject:
   - component: {fileID: 1051762589}
   - component: {fileID: 1051762588}
   - component: {fileID: 1051762587}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Igreja
-  m_TagString: Untagged
+  m_TagString: Nucleo
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2409,8 +2409,8 @@ Transform:
   m_GameObject: {fileID: 1051762586}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 28, y: 0.9, z: 16}
+  m_LocalPosition: {x: 0, y: 7, z: 0}
+  m_LocalScale: {x: 28, y: 15, z: 16}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7400000000000000016}
@@ -2427,9 +2427,9 @@ GameObject:
   - component: {fileID: 1079067493}
   - component: {fileID: 1079067492}
   - component: {fileID: 1079067491}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_1 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2539,9 +2539,9 @@ GameObject:
   - component: {fileID: 1088048606}
   - component: {fileID: 1088048605}
   - component: {fileID: 1088048604}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_3 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2555,7 +2555,7 @@ Transform:
   m_GameObject: {fileID: 1088048602}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.061727334, z: -0, w: 0.99809307}
-  m_LocalPosition: {x: -3.7492504, y: 0.32, z: 163.76852}
+  m_LocalPosition: {x: -8.898504, y: 0.32, z: 167.03705}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2651,9 +2651,9 @@ GameObject:
   - component: {fileID: 1141157652}
   - component: {fileID: 1141157651}
   - component: {fileID: 1141157650}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_3 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2667,7 +2667,7 @@ Transform:
   m_GameObject: {fileID: 1141157648}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.11901835, z: -0, w: 0.9928921}
-  m_LocalPosition: {x: -135.4, y: 0.2, z: -17.1}
+  m_LocalPosition: {x: -135.1, y: 0.2, z: -21.8}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2763,9 +2763,9 @@ GameObject:
   - component: {fileID: 1355879088}
   - component: {fileID: 1355879087}
   - component: {fileID: 1355879086}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_3 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2875,9 +2875,9 @@ GameObject:
   - component: {fileID: 1370451175}
   - component: {fileID: 1370451174}
   - component: {fileID: 1370451173}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_2 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2987,9 +2987,9 @@ GameObject:
   - component: {fileID: 1625803046}
   - component: {fileID: 1625803045}
   - component: {fileID: 1625803044}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_3 (4)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3003,7 +3003,7 @@ Transform:
   m_GameObject: {fileID: 1625803042}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7227473, z: -0, w: 0.6911124}
-  m_LocalPosition: {x: -4.9353104, y: 0.32, z: -150.46048}
+  m_LocalPosition: {x: -9.770592, y: 0.32, z: -150.62086}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3211,7 +3211,7 @@ GameObject:
   - component: {fileID: 1719022205}
   - component: {fileID: 1719022204}
   - component: {fileID: 1719022203}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3307,7 +3307,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 1, z: 100}
+  m_LocalScale: {x: 101, y: 1, z: 101}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3324,9 +3324,9 @@ GameObject:
   - component: {fileID: 1796300768}
   - component: {fileID: 1796300767}
   - component: {fileID: 1796300766}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_3 (2)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3436,13 +3436,13 @@ GameObject:
   - component: {fileID: 1812621317}
   - component: {fileID: 1812621316}
   - component: {fileID: 1812621315}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: 'Estrada_Principal_LesteOeste_01 '
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1812621314
 Transform:
   m_ObjectHideFlags: 0
@@ -3452,8 +3452,8 @@ Transform:
   m_GameObject: {fileID: 1812621313}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0.045, z: 0}
-  m_LocalScale: {x: 5, y: 0.11, z: 410}
+  m_LocalPosition: {x: -39.4062, y: 0, z: 0}
+  m_LocalScale: {x: 5, y: 0.11, z: 331.198}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7400000000000000002}
@@ -3548,9 +3548,9 @@ GameObject:
   - component: {fileID: 1999504431}
   - component: {fileID: 1999504430}
   - component: {fileID: 1999504429}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_2 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3564,7 +3564,7 @@ Transform:
   m_GameObject: {fileID: 1999504427}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.26789367, z: -0, w: 0.9634485}
-  m_LocalPosition: {x: -13.200001, y: 0.32, z: 160.5}
+  m_LocalPosition: {x: -18.349255, y: 0.32, z: 163.76852}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3660,9 +3660,9 @@ GameObject:
   - component: {fileID: 2027830581}
   - component: {fileID: 2027830580}
   - component: {fileID: 2027830579}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3772,9 +3772,9 @@ GameObject:
   - component: {fileID: 2035296935}
   - component: {fileID: 2035296934}
   - component: {fileID: 2035296933}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_2 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3884,9 +3884,9 @@ GameObject:
   - component: {fileID: 2055805109}
   - component: {fileID: 2055805108}
   - component: {fileID: 2055805107}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_2 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3996,9 +3996,9 @@ GameObject:
   - component: {fileID: 2136390239}
   - component: {fileID: 2136390238}
   - component: {fileID: 2136390237}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_1 (1)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4012,7 +4012,7 @@ Transform:
   m_GameObject: {fileID: 2136390235}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.061727334, z: -0, w: 0.99809307}
-  m_LocalPosition: {x: -22.650745, y: 0.32, z: 157.23148}
+  m_LocalPosition: {x: -27.8, y: 0.32, z: 160.5}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4108,9 +4108,9 @@ GameObject:
   - component: {fileID: 2137071697}
   - component: {fileID: 2137071696}
   - component: {fileID: 2137071695}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_2 (4)
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4124,7 +4124,7 @@ Transform:
   m_GameObject: {fileID: 2137071693}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.56326276, z: -0, w: 0.82627785}
-  m_LocalPosition: {x: -14.8, y: 0.32, z: -152.1}
+  m_LocalPosition: {x: -19.63528, y: 0.32, z: -152.26039}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4220,13 +4220,13 @@ GameObject:
   - component: {fileID: 7300000000000000007}
   - component: {fileID: 7300000000000000008}
   - component: {fileID: 7300000000000000009}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Estrada_Principal_NorteSul_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000007
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4332,13 +4332,13 @@ GameObject:
   - component: {fileID: 7300000000000000012}
   - component: {fileID: 7300000000000000013}
   - component: {fileID: 7300000000000000014}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Estrada_Fazenda_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000012
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4444,13 +4444,13 @@ GameObject:
   - component: {fileID: 7300000000000000017}
   - component: {fileID: 7300000000000000018}
   - component: {fileID: 7300000000000000019}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Viela_Casa_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000017
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4556,13 +4556,13 @@ GameObject:
   - component: {fileID: 7300000000000000027}
   - component: {fileID: 7300000000000000028}
   - component: {fileID: 7300000000000000029}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Estrada_Moinho_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000027
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4668,13 +4668,13 @@ GameObject:
   - component: {fileID: 7300000000000000032}
   - component: {fileID: 7300000000000000033}
   - component: {fileID: 7300000000000000034}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Estrada_Pedreira_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000032
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4780,13 +4780,13 @@ GameObject:
   - component: {fileID: 7300000000000000062}
   - component: {fileID: 7300000000000000063}
   - component: {fileID: 7300000000000000064}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Estrada_Serraria_01
-  m_TagString: Untagged
+  m_TagString: Estrada
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &7300000000000000062
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4892,9 +4892,9 @@ GameObject:
   - component: {fileID: 7300000000000000102}
   - component: {fileID: 7300000000000000103}
   - component: {fileID: 7300000000000000104}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_08
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4986,8 +4986,8 @@ Transform:
   m_GameObject: {fileID: 7300000000000000101}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 142, y: -0.015, z: -17.25}
-  m_LocalScale: {x: 22, y: 0.1, z: 27.5}
+  m_LocalPosition: {x: 142, y: -0.015, z: -12.4891}
+  m_LocalScale: {x: 22, y: 0.1, z: 37.0205}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7400000000000000004}
@@ -5004,9 +5004,9 @@ GameObject:
   - component: {fileID: 7300000000000000142}
   - component: {fileID: 7300000000000000143}
   - component: {fileID: 7300000000000000144}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Ponte
-  m_TagString: Untagged
+  m_TagString: Ponte
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5097,8 +5097,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7300000000000000141}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.9989728, z: 0, w: 0.04531442}
-  m_LocalPosition: {x: 142, y: 0.12, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 142, y: -0.1, z: 0}
   m_LocalScale: {x: 28, y: 0.3, z: 7}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5116,9 +5116,9 @@ GameObject:
   - component: {fileID: 7300000000000000147}
   - component: {fileID: 7300000000000000148}
   - component: {fileID: 7300000000000000149}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_01
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5228,9 +5228,9 @@ GameObject:
   - component: {fileID: 7300000000000000152}
   - component: {fileID: 7300000000000000153}
   - component: {fileID: 7300000000000000154}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_02
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5340,9 +5340,9 @@ GameObject:
   - component: {fileID: 7300000000000000157}
   - component: {fileID: 7300000000000000158}
   - component: {fileID: 7300000000000000159}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_03
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5452,9 +5452,9 @@ GameObject:
   - component: {fileID: 7300000000000000162}
   - component: {fileID: 7300000000000000163}
   - component: {fileID: 7300000000000000164}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_04
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5564,9 +5564,9 @@ GameObject:
   - component: {fileID: 7300000000000000167}
   - component: {fileID: 7300000000000000168}
   - component: {fileID: 7300000000000000169}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_05
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5676,9 +5676,9 @@ GameObject:
   - component: {fileID: 7300000000000000172}
   - component: {fileID: 7300000000000000173}
   - component: {fileID: 7300000000000000174}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_06
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5788,9 +5788,9 @@ GameObject:
   - component: {fileID: 7300000000000000177}
   - component: {fileID: 7300000000000000178}
   - component: {fileID: 7300000000000000179}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Rio_Trecho_07
-  m_TagString: Untagged
+  m_TagString: Rio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5900,9 +5900,9 @@ GameObject:
   - component: {fileID: 7300000000000000182}
   - component: {fileID: 7300000000000000183}
   - component: {fileID: 7300000000000000184}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_01
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6012,9 +6012,9 @@ GameObject:
   - component: {fileID: 7300000000000000187}
   - component: {fileID: 7300000000000000188}
   - component: {fileID: 7300000000000000189}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_02
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6124,9 +6124,9 @@ GameObject:
   - component: {fileID: 7300000000000000192}
   - component: {fileID: 7300000000000000193}
   - component: {fileID: 7300000000000000194}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_04
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6236,9 +6236,9 @@ GameObject:
   - component: {fileID: 7300000000000000197}
   - component: {fileID: 7300000000000000198}
   - component: {fileID: 7300000000000000199}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_05
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6348,9 +6348,9 @@ GameObject:
   - component: {fileID: 7300000000000000202}
   - component: {fileID: 7300000000000000203}
   - component: {fileID: 7300000000000000204}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: MuroAntigo_Trecho_07
-  m_TagString: Untagged
+  m_TagString: Muro
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6460,9 +6460,9 @@ GameObject:
   - component: {fileID: 7300000000000000247}
   - component: {fileID: 7300000000000000248}
   - component: {fileID: 7300000000000000249}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_1
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6554,7 +6554,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000246}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 7.799999, y: 0.32, z: 162.8}
+  m_LocalPosition: {x: 9.9, y: 0.32, z: 163.4}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6572,9 +6572,9 @@ GameObject:
   - component: {fileID: 7300000000000000252}
   - component: {fileID: 7300000000000000253}
   - component: {fileID: 7300000000000000254}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_2
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6666,7 +6666,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000251}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 17.8, y: 0.32, z: 162.8}
+  m_LocalPosition: {x: 19.9, y: 0.32, z: 163.4}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6684,9 +6684,9 @@ GameObject:
   - component: {fileID: 7300000000000000257}
   - component: {fileID: 7300000000000000258}
   - component: {fileID: 7300000000000000259}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_03_3
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6778,7 +6778,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000256}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 27.8, y: 0.32, z: 162.8}
+  m_LocalPosition: {x: 29.9, y: 0.32, z: 163.4}
   m_LocalScale: {x: 8, y: 0.64, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6796,9 +6796,9 @@ GameObject:
   - component: {fileID: 7300000000000000262}
   - component: {fileID: 7300000000000000263}
   - component: {fileID: 7300000000000000264}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_06_1
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6890,7 +6890,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000261}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 119.5, y: 0.32, z: -9.6}
+  m_LocalPosition: {x: 119.1, y: 0.32, z: -10.3}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6908,9 +6908,9 @@ GameObject:
   - component: {fileID: 7300000000000000267}
   - component: {fileID: 7300000000000000268}
   - component: {fileID: 7300000000000000269}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_06_2
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7002,7 +7002,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000266}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 119.5, y: 0.32, z: 0.4000001}
+  m_LocalPosition: {x: 117.7, y: 0.32, z: 8.3}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7020,9 +7020,9 @@ GameObject:
   - component: {fileID: 7300000000000000272}
   - component: {fileID: 7300000000000000273}
   - component: {fileID: 7300000000000000274}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_06_3
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7114,7 +7114,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000271}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 119.5, y: 0.32, z: 10.4}
+  m_LocalPosition: {x: 126.4, y: 0.32, z: 12.9}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7132,9 +7132,9 @@ GameObject:
   - component: {fileID: 7300000000000000277}
   - component: {fileID: 7300000000000000278}
   - component: {fileID: 7300000000000000279}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_1
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7226,7 +7226,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000276}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 120.20001, y: 0.32, z: -44}
+  m_LocalPosition: {x: 120.30002, y: 0.32, z: -46.8}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7244,9 +7244,9 @@ GameObject:
   - component: {fileID: 7300000000000000282}
   - component: {fileID: 7300000000000000283}
   - component: {fileID: 7300000000000000284}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_2
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7338,7 +7338,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000281}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 120.20001, y: 0.32, z: -34}
+  m_LocalPosition: {x: 120.30002, y: 0.32, z: -36.8}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7356,9 +7356,9 @@ GameObject:
   - component: {fileID: 7300000000000000287}
   - component: {fileID: 7300000000000000288}
   - component: {fileID: 7300000000000000289}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_09_3
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7450,7 +7450,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000286}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: 120.2, y: 0.32, z: -24}
+  m_LocalPosition: {x: 120.3, y: 0.32, z: -26.8}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7468,9 +7468,9 @@ GameObject:
   - component: {fileID: 7300000000000000307}
   - component: {fileID: 7300000000000000308}
   - component: {fileID: 7300000000000000309}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_1
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7562,7 +7562,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000306}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: -135, y: 0.2, z: -2.3}
+  m_LocalPosition: {x: -132.2, y: 0.2, z: -11.2}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7580,9 +7580,9 @@ GameObject:
   - component: {fileID: 7300000000000000312}
   - component: {fileID: 7300000000000000313}
   - component: {fileID: 7300000000000000314}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_2
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7674,7 +7674,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000311}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: -135.09999, y: 0.32, z: 8.399998}
+  m_LocalPosition: {x: -134.5, y: 0.32, z: 11.4}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7692,9 +7692,9 @@ GameObject:
   - component: {fileID: 7300000000000000317}
   - component: {fileID: 7300000000000000318}
   - component: {fileID: 7300000000000000319}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Destrocos_Muro_15_3
-  m_TagString: Untagged
+  m_TagString: Destrocos
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7786,7 +7786,7 @@ Transform:
   m_GameObject: {fileID: 7300000000000000316}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.104528464, z: 0, w: 0.9945219}
-  m_LocalPosition: {x: -135, y: 0.2, z: 17.7}
+  m_LocalPosition: {x: -134.4, y: 0.2, z: 20.6}
   m_LocalScale: {x: 4, y: 0.64, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7804,9 +7804,9 @@ GameObject:
   - component: {fileID: 7300000000000000337}
   - component: {fileID: 7300000000000000338}
   - component: {fileID: 7300000000000000339}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Fazenda
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7916,9 +7916,9 @@ GameObject:
   - component: {fileID: 7300000000000000342}
   - component: {fileID: 7300000000000000343}
   - component: {fileID: 7300000000000000344}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Moinho
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8028,9 +8028,9 @@ GameObject:
   - component: {fileID: 7300000000000000347}
   - component: {fileID: 7300000000000000348}
   - component: {fileID: 7300000000000000349}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Pedreira
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8140,9 +8140,9 @@ GameObject:
   - component: {fileID: 7300000000000000352}
   - component: {fileID: 7300000000000000353}
   - component: {fileID: 7300000000000000354}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Poco
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8252,9 +8252,9 @@ GameObject:
   - component: {fileID: 7300000000000000357}
   - component: {fileID: 7300000000000000358}
   - component: {fileID: 7300000000000000359}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Serraria
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8364,9 +8364,9 @@ GameObject:
   - component: {fileID: 7300000000000000362}
   - component: {fileID: 7300000000000000363}
   - component: {fileID: 7300000000000000364}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Mina
-  m_TagString: Untagged
+  m_TagString: ProducaoPassiva
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8476,9 +8476,9 @@ GameObject:
   - component: {fileID: 7300000000000000367}
   - component: {fileID: 7300000000000000368}
   - component: {fileID: 7300000000000000369}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Ferreiro
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8588,9 +8588,9 @@ GameObject:
   - component: {fileID: 7300000000000000372}
   - component: {fileID: 7300000000000000373}
   - component: {fileID: 7300000000000000374}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Encantador
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8700,9 +8700,9 @@ GameObject:
   - component: {fileID: 7300000000000000377}
   - component: {fileID: 7300000000000000378}
   - component: {fileID: 7300000000000000379}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Alquimista
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8812,9 +8812,9 @@ GameObject:
   - component: {fileID: 7300000000000000382}
   - component: {fileID: 7300000000000000383}
   - component: {fileID: 7300000000000000384}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Carpinteiro
-  m_TagString: Untagged
+  m_TagString: ConstrucaoServico
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8924,9 +8924,9 @@ GameObject:
   - component: {fileID: 7300000000000000387}
   - component: {fileID: 7300000000000000388}
   - component: {fileID: 7300000000000000389}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_01
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9036,9 +9036,9 @@ GameObject:
   - component: {fileID: 7300000000000000392}
   - component: {fileID: 7300000000000000393}
   - component: {fileID: 7300000000000000394}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_02
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9148,9 +9148,9 @@ GameObject:
   - component: {fileID: 7300000000000000397}
   - component: {fileID: 7300000000000000398}
   - component: {fileID: 7300000000000000399}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_03
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9260,9 +9260,9 @@ GameObject:
   - component: {fileID: 7300000000000000402}
   - component: {fileID: 7300000000000000403}
   - component: {fileID: 7300000000000000404}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_04
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9372,9 +9372,9 @@ GameObject:
   - component: {fileID: 7300000000000000407}
   - component: {fileID: 7300000000000000408}
   - component: {fileID: 7300000000000000409}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_05
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9484,9 +9484,9 @@ GameObject:
   - component: {fileID: 7300000000000000412}
   - component: {fileID: 7300000000000000413}
   - component: {fileID: 7300000000000000414}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_06
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9596,9 +9596,9 @@ GameObject:
   - component: {fileID: 7300000000000000417}
   - component: {fileID: 7300000000000000418}
   - component: {fileID: 7300000000000000419}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_08
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9708,9 +9708,9 @@ GameObject:
   - component: {fileID: 7300000000000000422}
   - component: {fileID: 7300000000000000423}
   - component: {fileID: 7300000000000000424}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_09
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9820,9 +9820,9 @@ GameObject:
   - component: {fileID: 7300000000000000427}
   - component: {fileID: 7300000000000000428}
   - component: {fileID: 7300000000000000429}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Casa_10
-  m_TagString: Untagged
+  m_TagString: Moradia
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9916,230 +9916,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -206.1, y: 0.22, z: -42.8}
   m_LocalScale: {x: 10, y: 0.42, z: 8}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7400000000000000014}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7300000000000000431
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7300000000000000435}
-  - component: {fileID: 7300000000000000432}
-  - component: {fileID: 7300000000000000433}
-  - component: {fileID: 7300000000000000434}
-  m_Layer: 0
-  m_Name: Casa_11
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!65 &7300000000000000432
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000431}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &7300000000000000433
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000431}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 4e30c4d9d05bd9f40b12d4f2859220f0, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &7300000000000000434
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000431}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &7300000000000000435
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000431}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.06975647, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: -6.1, y: 0.22, z: -9.45}
-  m_LocalScale: {x: 1.65, y: 0.42, z: 1.05}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7400000000000000014}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7300000000000000436
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7300000000000000440}
-  - component: {fileID: 7300000000000000437}
-  - component: {fileID: 7300000000000000438}
-  - component: {fileID: 7300000000000000439}
-  m_Layer: 0
-  m_Name: Casa_12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!65 &7300000000000000437
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000436}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &7300000000000000438
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000436}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 4e30c4d9d05bd9f40b12d4f2859220f0, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &7300000000000000439
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000436}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &7300000000000000440
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7300000000000000436}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.06975647, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: 6.1, y: 0.22, z: -9.45}
-  m_LocalScale: {x: 1.65, y: 0.42, z: 1.05}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7400000000000000014}
@@ -10441,8 +10217,6 @@ Transform:
   - {fileID: 7300000000000000425}
   - {fileID: 144590873}
   - {fileID: 7300000000000000430}
-  - {fileID: 7300000000000000435}
-  - {fileID: 7300000000000000440}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7400000000000000015
@@ -10477,10 +10251,627 @@ Transform:
   - {fileID: 1051762590}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8000000000000000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000001}
+  - component: {fileID: 8000000000000000002}
+  m_Layer: 13
+  m_Name: Zona de Construcao
+  m_TagString: ZonaConstrucao
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832a412fbd7142ca942e84ad1c0bd701, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VillageBuildArea
+  center: {fileID: 1051762590}
+  initialRadius: 429.4
+  radiusPerUpgrade: 10
+  expansionLevel: 0
+  maxExpansionLevel: 4
+  baseWoodCost: 30
+  woodCostPerLevel: 20
+  baseSuppliesCost: 5
+  suppliesCostPerLevel: 3
+--- !u!1 &8000000000000000010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000011}
+  m_Layer: 15
+  m_Name: Pontos Especiais
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8000000000000000081}
+  - {fileID: 8000000000000000091}
+  - {fileID: 8000000000000000101}
+  - {fileID: 8000000000000000111}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8000000000000000020
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000021}
+  m_Layer: 0
+  m_Name: Spawns Inimigos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000021
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000020}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8000000000000000031}
+  - {fileID: 8000000000000000041}
+  - {fileID: 8000000000000000051}
+  - {fileID: 8000000000000000061}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8000000000000000030
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000031}
+  - component: {fileID: 8000000000000000032}
+  m_Layer: 14
+  m_Name: Spawn Norte
+  m_TagString: PontoSpawnInimigo
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000031
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000030}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 270}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000021}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256a908b563846b993452148be7386ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawnPoint
+  side: 0
+  weight: 1
+  enabledForSpawning: 1
+--- !u!1 &8000000000000000040
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000041}
+  - component: {fileID: 8000000000000000042}
+  m_Layer: 14
+  m_Name: Spawn Sul
+  m_TagString: PontoSpawnInimigo
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000040}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -270}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000021}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256a908b563846b993452148be7386ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawnPoint
+  side: 1
+  weight: 1
+  enabledForSpawning: 1
+--- !u!1 &8000000000000000050
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000051}
+  - component: {fileID: 8000000000000000052}
+  m_Layer: 14
+  m_Name: Spawn Leste
+  m_TagString: PontoSpawnInimigo
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000051
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000050}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 270, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000021}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256a908b563846b993452148be7386ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawnPoint
+  side: 2
+  weight: 1
+  enabledForSpawning: 1
+--- !u!1 &8000000000000000060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000061}
+  - component: {fileID: 8000000000000000062}
+  m_Layer: 14
+  m_Name: Spawn Oeste
+  m_TagString: PontoSpawnInimigo
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000061
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -270, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000021}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 256a908b563846b993452148be7386ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawnPoint
+  side: 3
+  weight: 1
+  enabledForSpawning: 1
+--- !u!1 &8000000000000000070
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000071}
+  - component: {fileID: 8000000000000000072}
+  m_Layer: 0
+  m_Name: Gameplay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000071
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000070}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5282b4a48f425b4b93e5aeb35bc1964, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game
+  litMaterial: {fileID: 0}
+  lineMaterial: {fileID: 0}
+  startWood: 186
+  startSupplies: 6
+  dawnWood: 10
+  dawnSuppliesBase: 3
+  gridWidth: 21
+  gridHeight: 21
+  maxGridDimension: 41
+  sceneMapDimension: 281
+  gridCellSize: 2
+  pathBreakCost: 10
+  spawnBuildClearance: 1
+  coreBuildClearance: 0
+  spawnEdges: -1
+  buildGridWidth: 0
+  buildGridHeight: 0
+  buildGridOffset: {x: 0, y: 0}
+  cameraPanSpeed: 40
+  cameraEdgeSize: 28
+  combatCameraTarget: {fileID: 0}
+  combatCameraFollowSpeed: 8
+  buildCameraZoomSpeed: 50
+  buildCameraMinZoom: 15
+  buildCameraMaxZoom: 100
+  buildPlacementStep: 0.5
+  coreHealth: 300
+  eventLogEntries: 8
+  showEventLog: 1
+  scenario: {fileID: 0}
+  commonEnemy:
+    maxHealth: 25
+    speed: 3.2
+    damage: 4
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 16
+    scale: {x: 0.9, y: 0.9, z: 0.9}
+  tankEnemy:
+    maxHealth: 140
+    speed: 2.2
+    damage: 14
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 100
+    scale: {x: 1.8, y: 0.9, z: 1.8}
+  initialGroups: 1
+  groupsPerRounds: 2
+  maxGroups: 4
+  baseCommonEnemies: 4
+  commonsPerRound: 1
+  tankEveryRounds: 2
+  hunterBaseChance: 0.3
+  hunterChancePerRound: 0.05
+  hunterChanceCap: 0.6
+  spawnInterval: 0.4
+  groupInterval: 3
+  groupMinSize: 5
+  loneWolfChance: 0.1
+  tacticalGroupChance: 0.7
+  round: 0
+  killed: 0
+  deserted: 0
+  night: 0
+  lost: 0
+  core: {fileID: 0}
+--- !u!1 &8000000000000000080
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000081}
+  - component: {fileID: 8000000000000000082}
+  m_Layer: 15
+  m_Name: Ponto Defesa Especial Noroeste
+  m_TagString: PontoConstrucaoEspecial
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000081
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000080}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -70, y: 0, z: 70}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cf16353c344bd3a8b787f9f7397262, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialBuildPoint
+  requiredBuildingId: DefesaEspecial
+  occupied: 0
+  activationRadius: 4
+  occupant: {fileID: 0}
+--- !u!1 &8000000000000000090
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000091}
+  - component: {fileID: 8000000000000000092}
+  m_Layer: 15
+  m_Name: Ponto Defesa Especial Nordeste
+  m_TagString: PontoConstrucaoEspecial
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000091
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000090}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 70, y: 0, z: 70}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cf16353c344bd3a8b787f9f7397262, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialBuildPoint
+  requiredBuildingId: DefesaEspecial
+  occupied: 0
+  activationRadius: 4
+  occupant: {fileID: 0}
+--- !u!1 &8000000000000000100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000101}
+  - component: {fileID: 8000000000000000102}
+  m_Layer: 15
+  m_Name: Ponto Defesa Especial Sudoeste
+  m_TagString: PontoConstrucaoEspecial
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -70, y: 0, z: -70}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cf16353c344bd3a8b787f9f7397262, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialBuildPoint
+  requiredBuildingId: DefesaEspecial
+  occupied: 0
+  activationRadius: 4
+  occupant: {fileID: 0}
+--- !u!1 &8000000000000000110
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8000000000000000111}
+  - component: {fileID: 8000000000000000112}
+  m_Layer: 15
+  m_Name: Ponto Defesa Especial Sudeste
+  m_TagString: PontoConstrucaoEspecial
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8000000000000000111
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000110}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 70, y: 0, z: -70}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8000000000000000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8000000000000000112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1cf16353c344bd3a8b787f9f7397262, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialBuildPoint
+  requiredBuildingId: DefesaEspecial
+  occupied: 0
+  activationRadius: 4
+  occupant: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 8000000000000000071}
+  - {fileID: 8000000000000000001}
+  - {fileID: 8000000000000000011}
+  - {fileID: 8000000000000000021}
   - {fileID: 28524618}
   - {fileID: 60574047}
   - {fileID: 14150850}

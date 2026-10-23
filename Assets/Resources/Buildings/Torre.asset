@@ -16,15 +16,19 @@ MonoBehaviour:
   description: 
   order: 0
   kind: 1
+  menuCategory: 0
   shape: 2
   color: {r: 0.063545756, g: 0.7924528, b: 0.74967235, a: 1}
   size: {x: 0.95, y: 1.5, z: 0.95}
   woodCost: 5
   suppliesCost: 0
+  requiresSpecialBuildPoint: 0
+  specialBuildPointId: 
   maxHealth: 60
   towerRange: 12
-  towerDamage: 7
+  towerDamage: 1
   towerCooldown: 0.45
+  productionMode: 0
   produces: 0
   amount: 0
   cycleSeconds: 5

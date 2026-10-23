@@ -4,6 +4,8 @@ using UnityEngine;
 // Grid no plano XZ (Y = altura) + campo de fluxo (Dijkstra a partir do Coração).
 public class GridWorld : MonoBehaviour
 {
+    const float LocalDetourRadius = 12f;
+
     public static GridWorld I;
 
     public int width = 21;
@@ -13,11 +15,18 @@ public class GridWorld : MonoBehaviour
     public int breakCost = 10;   // quantas células de desvio "valem" quebrar uma parede
 
     Structure[,] cells;
+    bool[,] hardBlocked;
     int[,] dist;
+    int[,] tankDist;
     readonly Dictionary<Vector2Int, int[,]> targetDistances = new Dictionary<Vector2Int, int[,]>();
 
     static readonly Vector2Int[] D4 =
         { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
+    static readonly Vector2Int[] D8 =
+    {
+        new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1), new Vector2Int(-1, 1),
+        new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(0, -1), new Vector2Int(1, -1)
+    };
     struct QueueNode
     {
         public Vector2Int cell;
@@ -46,11 +55,24 @@ public class GridWorld : MonoBehaviour
     void Allocate()
     {
         cells = new Structure[width, height];
+        hardBlocked = new bool[width, height];
         dist = new int[width, height];
+        InvalidateFlowFields();
+    }
+
+    void InvalidateFlowFields()
+    {
         targetDistances.Clear();
+        tankDist = null;
     }
 
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < width && c.y < height;
+    public bool IsHardBlocked(Vector2Int c) => InBounds(c) && hardBlocked[c.x, c.y];
+    public bool IsTankBreakableWall(Structure structure)
+    {
+        return structure != null && structure.kind == StructureKind.Wall &&
+               (structure.gameObject.tag == "Muro" || structure.gameObject.tag == "Cerca");
+    }
 
     public Vector3 CellToWorld(Vector2Int c) =>
         transform.position + new Vector3((c.x - width / 2f + 0.5f) * cellSize, 0f, (c.y - height / 2f + 0.5f) * cellSize);
@@ -61,27 +83,114 @@ public class GridWorld : MonoBehaviour
         return new Vector2Int(Mathf.FloorToInt(l.x / cellSize + width / 2f), Mathf.FloorToInt(l.z / cellSize + height / 2f));
     }
 
+    public Vector2Int AttackApproachCell(Structure target, int slot, float attackRange)
+    {
+        if (target == null) return CoreCell;
+        int firstDirection = (slot & 0x7fffffff) % D8.Length;
+        int maxRing = Mathf.Max(1, Mathf.CeilToInt((attackRange + cellSize * 0.5f) / cellSize));
+        Vector3 targetPosition = target.transform.position;
+        targetPosition.y = transform.position.y;
+        // Scene structures can retain a stale/default Structure.cell when their
+        // scene footprint was registered before the runtime grid was configured.
+        // Resolve from their current world position so attack routes don't fall
+        // back to CoreCell and keep marching toward the village center.
+        Vector2Int targetCell = WorldToCell(targetPosition);
+        if (!InBounds(targetCell)) return targetCell;
+
+        for (int ring = 1; ring <= maxRing; ring++)
+        {
+            for (int i = 0; i < D8.Length; i++)
+            {
+                Vector2Int candidate = targetCell + D8[(firstDirection + i) % D8.Length] * ring;
+                if (!InBounds(candidate) || hardBlocked[candidate.x, candidate.y] || cells[candidate.x, candidate.y] != null)
+                    continue;
+
+                Vector3 approachPosition = CellToWorld(candidate);
+                approachPosition.y = targetPosition.y;
+                if (Vector3.Distance(approachPosition, targetPosition) > attackRange)
+                    continue;
+                return candidate;
+            }
+        }
+
+        return targetCell;
+    }
+
     public Structure Get(Vector2Int c) => InBounds(c) ? cells[c.x, c.y] : null;
     public void Set(Vector2Int c, Structure s)
     {
         cells[c.x, c.y] = s;
-        targetDistances.Clear();
+        InvalidateFlowFields();
     }
 
     public void Clear(Structure s)
     {
-        if (InBounds(s.cell) && cells[s.cell.x, s.cell.y] == s)
+        bool changed = false;
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                if (cells[x, y] == s)
+                {
+                    cells[x, y] = null;
+                    changed = true;
+                }
+        if (changed) Recalc();
+    }
+
+    public void SetHardBlocked(Bounds bounds, bool blocked)
+    {
+        Vector2Int min = WorldToCell(new Vector3(bounds.min.x, transform.position.y, bounds.min.z));
+        Vector2Int max = WorldToCell(new Vector3(bounds.max.x, transform.position.y, bounds.max.z));
+        for (int x = Mathf.Max(0, min.x); x <= Mathf.Min(width - 1, max.x); x++)
+            for (int y = Mathf.Max(0, min.y); y <= Mathf.Min(height - 1, max.y); y++)
+                hardBlocked[x, y] = blocked;
+        InvalidateFlowFields();
+    }
+
+    // Bridge collider bounds are axis-aligned and can include cells beyond the bridge's
+    // actual footprint. Only clear river cells whose centers lie inside the collider.
+    public void ClearHardBlockedWithinColliderFootprint(Collider collider)
+    {
+        if (collider == null || !collider.enabled) return;
+
+        Bounds bounds = collider.bounds;
+        Vector2Int min = WorldToCell(new Vector3(bounds.min.x, transform.position.y, bounds.min.z));
+        Vector2Int max = WorldToCell(new Vector3(bounds.max.x, transform.position.y, bounds.max.z));
+        float sampleY = bounds.center.y;
+
+        for (int x = Mathf.Max(0, min.x); x <= Mathf.Min(width - 1, max.x); x++)
         {
-            cells[s.cell.x, s.cell.y] = null;
-            Recalc();
+            for (int y = Mathf.Max(0, min.y); y <= Mathf.Min(height - 1, max.y); y++)
+            {
+                Vector3 cellCenter = CellToWorld(new Vector2Int(x, y));
+                Vector3 sample = new Vector3(cellCenter.x, sampleY, cellCenter.z);
+                Vector3 closest = collider.ClosestPoint(sample);
+                float dx = sample.x - closest.x;
+                float dz = sample.z - closest.z;
+                if (dx * dx + dz * dz <= 0.0001f)
+                    hardBlocked[x, y] = false;
+            }
         }
+
+        InvalidateFlowFields();
+    }
+
+    public void SetFootprint(Structure structure, Bounds bounds)
+    {
+        if (structure == null) return;
+        Vector2Int min = WorldToCell(new Vector3(bounds.min.x, transform.position.y, bounds.min.z));
+        Vector2Int max = WorldToCell(new Vector3(bounds.max.x, transform.position.y, bounds.max.z));
+        for (int x = Mathf.Max(0, min.x); x <= Mathf.Min(width - 1, max.x); x++)
+            for (int y = Mathf.Max(0, min.y); y <= Mathf.Min(height - 1, max.y); y++)
+                cells[x, y] = structure;
+        structure.cell = WorldToCell(bounds.center);
+        InvalidateFlowFields();
     }
 
     // Campo de fluxo com custos: entrar numa célula custa 1, e custa mais (breakCost) se houver construção nela.
     // Dijkstra é necessário porque os pesos das células não são todos iguais.
     public void Recalc(Vector2Int? extra = null)
     {
-        targetDistances.Clear();
+        InvalidateFlowFields();
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
                 dist[x, y] = int.MaxValue;
@@ -101,10 +210,11 @@ public class GridWorld : MonoBehaviour
             foreach (var d in D4)
             {
                 var n = c + d;
-                if (!InBounds(n)) continue;
+                if (!InBounds(n) || hardBlocked[n.x, n.y]) continue;
 
                 // A busca parte do destino. Ao expandir para trás, o custo da aresta
                 // é o custo de entrar em c no trajeto normal de n até o Coração.
+                if (hardBlocked[c.x, c.y] && c != start) continue;
                 bool blocked = cells[c.x, c.y] != null || (extra.HasValue && extra.Value == c);
                 int nd = node.cost + 1 + (blocked ? structureCost : 0);
 
@@ -122,44 +232,134 @@ public class GridWorld : MonoBehaviour
     // Direção desejada (a "bússola"): segue o vizinho cardinal com menor custo até o Coração.
     public Vector3 FlowDir(Vector3 wp)
     {
-        return FlowDir(wp, dist);
+        return FlowDir(wp, dist, false, true, CellToWorld(CoreCell));
+    }
+
+    // Tanks keep the Core as their strategic target. The weighted flow field
+    // chooses whether a wall is cheaper to break than to route around.
+    public Vector3 FlowDirForTank(Vector3 wp)
+    {
+        if (tankDist == null) tankDist = CalculateDistances(CoreCell, true);
+        return FlowDir(wp, tankDist, true, true, CellToWorld(CoreCell));
     }
 
     // Hunters use the same weighted routing toward a tower instead of walking in a straight line through walls.
     public Vector3 FlowDir(Vector3 wp, Vector2Int target)
     {
-        if (!InBounds(target)) return FlowDir(wp);
-        if (!targetDistances.TryGetValue(target, out var targetDist))
-        {
-            targetDist = CalculateDistances(target);
-            targetDistances[target] = targetDist;
-        }
-        return FlowDir(wp, targetDist);
+        return FlowDir(wp, target, true);
     }
 
-    Vector3 FlowDir(Vector3 wp, int[,] distances)
+    public Vector3 FlowDir(Vector3 wp, Vector2Int target, bool allowLocalDetour)
+    {
+        Vector3 targetWorld = CellToWorld(target);
+        if (!InBounds(target)) return DirectionTo(wp, targetWorld);
+        if (!targetDistances.TryGetValue(target, out var targetDist))
+        {
+            targetDist = CalculateDistances(target, false);
+            targetDistances[target] = targetDist;
+        }
+        return FlowDir(wp, targetDist, false, allowLocalDetour, targetWorld);
+    }
+
+    Vector3 FlowDir(Vector3 wp, int[,] distances, bool preferBreakingWalls, bool allowLocalDetour,
+        Vector3 unreachableDestination)
     {
         var c = WorldToCell(wp);
-        Vector3 toCore = CellToWorld(CoreCell) - wp;
-        toCore.y = 0f;
-        if (!InBounds(c) || distances[c.x, c.y] == int.MaxValue) return toCore.normalized;
+        Vector3 fallback = unreachableDestination - wp;
+        fallback.y = 0f;
+        if (!InBounds(c) || distances[c.x, c.y] == int.MaxValue) return fallback.normalized;
 
         int best = distances[c.x, c.y];
         var pick = c;
         foreach (var d in D4)
         {
             var n = c + d;
-            if (!InBounds(n) || distances[n.x, n.y] == int.MaxValue) continue;
+            if (!InBounds(n) || hardBlocked[n.x, n.y] || distances[n.x, n.y] == int.MaxValue) continue;
             int s = distances[n.x, n.y] + 1 + (cells[n.x, n.y] != null ? Mathf.Max(0, breakCost) : 0);
             if (s <= best) { best = s; pick = n; }
         }
+
+        // Prefer a nearby open route over the weighted shortest route through a
+        // destructible structure. Only consider detours within local awareness;
+        // if none makes progress, the existing flow can still choose to attack it.
+        if (pick != c && cells[pick.x, pick.y] != null)
+        {
+            bool selectedWallForTank = preferBreakingWalls &&
+                IsTankBreakableWall(cells[pick.x, pick.y]);
+            if (!selectedWallForTank && allowLocalDetour)
+            {
+                Vector2Int detour = FindLocalOpenDetour(c, distances,
+                    Mathf.Max(1, Mathf.CeilToInt(LocalDetourRadius / cellSize)));
+                if (detour != c) pick = detour;
+            }
+        }
+
         if (pick == c) return Vector3.zero;
         var t = CellToWorld(pick) - wp;
         t.y = 0f;
         return t.normalized;
     }
 
-    int[,] CalculateDistances(Vector2Int start)
+    static Vector3 DirectionTo(Vector3 from, Vector3 destination)
+    {
+        Vector3 direction = destination - from;
+        direction.y = 0f;
+        return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.zero;
+    }
+
+    Vector2Int FindLocalOpenDetour(Vector2Int start, int[,] distances, int maxSteps)
+    {
+        if (!InBounds(start) || distances[start.x, start.y] == int.MaxValue) return start;
+
+        int minX = Mathf.Max(0, start.x - maxSteps);
+        int maxX = Mathf.Min(width - 1, start.x + maxSteps);
+        int minY = Mathf.Max(0, start.y - maxSteps);
+        int maxY = Mathf.Min(height - 1, start.y + maxSteps);
+        var visited = new bool[maxX - minX + 1, maxY - minY + 1];
+        var firstStep = new Vector2Int[maxX - minX + 1, maxY - minY + 1];
+        var steps = new int[maxX - minX + 1, maxY - minY + 1];
+        var open = new Queue<Vector2Int>();
+        visited[start.x - minX, start.y - minY] = true;
+        open.Enqueue(start);
+
+        Vector2Int bestGoal = start;
+        int bestDistance = distances[start.x, start.y];
+
+        while (open.Count > 0)
+        {
+            Vector2Int current = open.Dequeue();
+            int currentX = current.x - minX;
+            int currentY = current.y - minY;
+            if (steps[currentX, currentY] >= maxSteps) continue;
+
+            foreach (var direction in D4)
+            {
+                Vector2Int next = current + direction;
+                int nextX = next.x - minX;
+                int nextY = next.y - minY;
+                if (nextX < 0 || nextY < 0 || nextX >= visited.GetLength(0) || nextY >= visited.GetLength(1) ||
+                    visited[nextX, nextY] || hardBlocked[next.x, next.y] ||
+                    cells[next.x, next.y] != null) continue;
+
+                visited[nextX, nextY] = true;
+                steps[nextX, nextY] = steps[currentX, currentY] + 1;
+                firstStep[nextX, nextY] = current == start ? next : firstStep[currentX, currentY];
+                open.Enqueue(next);
+
+                int routeDistance = distances[next.x, next.y];
+                if (routeDistance < bestDistance)
+                {
+                    bestDistance = routeDistance;
+                    bestGoal = next;
+                }
+            }
+        }
+
+        if (bestGoal == start) return start;
+        return firstStep[bestGoal.x - minX, bestGoal.y - minY];
+    }
+
+    int[,] CalculateDistances(Vector2Int start, bool wallsOnly)
     {
         var distances = new int[width, height];
         for (int x = 0; x < width; x++)
@@ -180,7 +380,14 @@ public class GridWorld : MonoBehaviour
             foreach (var d in D4)
             {
                 var n = c + d;
-                if (!InBounds(n)) continue;
+                if (!InBounds(n) || hardBlocked[n.x, n.y] ||
+                    (hardBlocked[c.x, c.y] && c != start)) continue;
+                Structure nextStructure = cells[n.x, n.y];
+                if (wallsOnly && n != start && nextStructure != null && !IsTankBreakableWall(nextStructure))
+                    continue;
+                Structure structure = cells[c.x, c.y];
+                if (wallsOnly && c != start && structure != null && !IsTankBreakableWall(structure))
+                    continue;
                 int nd = node.cost + 1 + (cells[c.x, c.y] != null ? structureCost : 0);
                 if (nd >= distances[n.x, n.y]) continue;
                 distances[n.x, n.y] = nd;
