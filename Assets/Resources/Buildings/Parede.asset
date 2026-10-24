@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
+  m_Name: Cerca
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  displayName: Cerca
+  description: 
+  order: 0
+  kind: 0
+  shape: 3
+  color: {r: 0.42, g: 0.24, b: 0.10, a: 1}
+  size: {x: 2.4, y: 1.2, z: 0.4}
+  woodCost: 5
+  suppliesCost: 0
+  maxHealth: 60
+  towerRange: 12
+  towerDamage: 7
+  towerCooldown: 0.45
+  produces: 0
+  amount: 0
+  cycleSeconds: 5

@@ -3,7 +3,24 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Nucleo
+  - ConstrucaoProdutiva
+  - ConstrucaoDefensiva
+  - ProducaoAtiva
+  - ProducaoPassiva
+  - ConstrucaoServico
+  - Moradia
+  - Muro
+  - Cerca
+  - Destrocos
+  - Rio
+  - Ponte
+  - Estrada
+  - ZonaConstrucao
+  - PontoConstrucaoEspecial
+  - PontoSpawnInimigo
+  - Player
   layers:
   - Default
   - TransparentFX
@@ -13,16 +30,16 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - MapEnvironment
+  - Structures
+  - AncientWalls
+  - RiverBlocker
+  - BridgeWalkable
+  - BuildArea
+  - EnemySpawns
+  - SpecialBuildPoints
+  - NPCs
+  - Enemies
   - 
   - 
   - 

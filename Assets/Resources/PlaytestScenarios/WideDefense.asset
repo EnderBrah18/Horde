@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bf841bf8ead482cbbf850577e7cd04b, type: 3}
+  m_Name: WideDefense
+  m_EditorClassIdentifier: Assembly-CSharp::PlaytestScenario
+  displayName: "Defesa ampla"
+  instructions: "Mapa maior, com duas frentes opostas. Compare torres e corredores de paredes."
+  gridWidth: 31
+  gridHeight: 31
+  gridCellSize: 2
+  pathBreakCost: 10
+  spawnBuildClearance: 1
+  coreBuildClearance: 0
+  spawnEdges: 3
+  buildGridWidth: 25
+  buildGridHeight: 25
+  buildGridOffset: {x: 0, y: 0}
+  startWood: 60
+  startSupplies: 6
+  coreHealth: 300
+  initialGroups: 2
+  groupsPerRounds: 2
+  maxGroups: 4
+  baseCommonEnemies: 5
+  commonsPerRound: 1
+  tankEveryRounds: 2
+  hunterBaseChance: 0.3
+  hunterChancePerRound: 0.05
+  hunterChanceCap: 0.6
+  spawnInterval: 0.4
+  groupInterval: 3
+  commonEnemy:
+    maxHealth: 25
+    speed: 3.2
+    damage: 4
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 16
+    scale: {x: 0.9, y: 0.9, z: 0.9}
+  tankEnemy:
+    maxHealth: 140
+    speed: 2.2
+    damage: 14
+    attackCooldown: 1
+    attackRange: 3
+    tacticRadius: 100
+    scale: {x: 1.8, y: 0.9, z: 1.8}
+  loneWolfChance: 0.1
+  tacticalGroupChance: 0.7
+  groupMinSize: 5
