@@ -51,6 +51,8 @@ public class Enemy : MonoBehaviour
     Vector3 home;
     Structure damagedByTarget;
     Structure selectedTarget;
+    PlayerVitals selectedPlayer;
+    float playerRetaliationUntil;
     string lastTargetReason;
     bool targetDebugPending;
     bool movementDebugPending;
@@ -214,7 +216,7 @@ public class Enemy : MonoBehaviour
                 dir = MarchDir();
                 if (group != null && dir.sqrMagnitude > 0.0001f)
                     dir = group.TravelSteering(this, dir,
-                        selectedTarget != null && selectedTarget.kind != StructureKind.Core);
+                        selectedPlayer != null || (selectedTarget != null && selectedTarget.kind != StructureKind.Core));
                 // Keep attackers stationary while they are in range of their target.
                 if (dir.sqrMagnitude > 0.0001f)
                 {
@@ -257,7 +259,12 @@ public class Enemy : MonoBehaviour
         Move(dir, mult, dt);
         Vector3 facing = transform.position - positionBeforeMove;
         facing.y = 0f;
-        if (IsValidTarget(selectedTarget) &&
+        if (selectedPlayer != null && selectedPlayer.IsAlive)
+        {
+            facing = selectedPlayer.transform.position - transform.position;
+            facing.y = 0f;
+        }
+        else if (IsValidTarget(selectedTarget) &&
             FlatDistance(transform.position, selectedTarget.transform.position) <= attackRange)
         {
             facing = selectedTarget.transform.position - transform.position;
@@ -316,6 +323,7 @@ public class Enemy : MonoBehaviour
             Structure previousTarget = selectedTarget;
             string previousReason = lastTargetReason;
             selectedTarget = PickTarget(pos);
+            selectedPlayer = PickPlayerTarget(pos, selectedTarget);
             targetDecisionTimer = TargetDecisionInterval;
             if (DebugTargetingEnabled() &&
                 (targetDebugPending || previousTarget != selectedTarget || previousReason != lastTargetReason))
@@ -326,6 +334,27 @@ public class Enemy : MonoBehaviour
             targetDebugPending = false;
         }
         Structure t = selectedTarget;
+
+        if (selectedPlayer != null && selectedPlayer.IsAlive)
+        {
+            Vector3 destination = selectedPlayer.transform.position;
+            bool clearAttack = ClearPlayerAttack(pos, destination);
+            if (FlatDistance(pos, destination) <= attackRange && clearAttack)
+            {
+                if (atkTimer <= 0f)
+                {
+                    atkTimer = attackCooldown;
+                    selectedPlayer.TakeDamage(damage, gameObject);
+                }
+                return Vector3.zero;
+            }
+            Vector2Int playerCell = GridWorld.I.WorldToCell(destination);
+            if (GridWorld.I.TryMovingTargetRoute(pos, playerCell, out Vector3 pursuit, tacticRadius, NavigationRadius))
+                return pursuit;
+            // A blocked/unreachable player must not strand the enemy or cause
+            // attacks through walls. Resume the existing structure objective.
+            selectedPlayer = null;
+        }
 
         if (group != null && group.Leader == this)
             group.CommandTarget = t;
@@ -352,6 +381,32 @@ public class Enemy : MonoBehaviour
         if (GridWorld.I.TryOpenRoute(pos, GridWorld.I.CoreCell, out Vector3 openCoreDirection, tacticRadius, NavigationRadius))
             return openCoreDirection;
         return GridWorld.I.FlowDir(pos);
+    }
+
+    PlayerVitals PickPlayerTarget(Vector3 position, Structure structureTarget)
+    {
+        var player = PlayerVitals.I;
+        if (player == null || !player.IsAlive || type == EnemyType.Tank) return null;
+        float distance = FlatDistance(position, player.transform.position);
+        if (distance > tacticRadius) return null;
+        // Retaliation is local; fleeing enemies and Tanks keep their existing roles.
+        if (Time.time < playerRetaliationUntil) return player;
+        if (personality == Personality.Hunter && IsValidTarget(structureTarget) && structureTarget.kind == StructureKind.Tower)
+            return null;
+        return !IsValidTarget(structureTarget) || distance <= FlatDistance(position, structureTarget.transform.position)
+            ? player : null;
+    }
+
+    bool ClearPlayerAttack(Vector3 from, Vector3 to)
+    {
+        var grid = GridWorld.I;
+        int steps = Mathf.Max(1, Mathf.CeilToInt(FlatDistance(from, to) / (grid.cellSize * 0.25f)));
+        for (int i = 0; i <= steps; i++)
+        {
+            Vector2Int cell = grid.WorldToCell(Vector3.Lerp(from, to, i / (float)steps));
+            if (!grid.InBounds(cell) || grid.IsHardBlocked(cell) || grid.Get(cell) != null) return false;
+        }
+        return true;
     }
 
     // Prioridades pessoais vêm antes da sugestão do líder; inimigos comuns não têm um alvo global fixo.
@@ -493,6 +548,14 @@ public class Enemy : MonoBehaviour
 
     void OnDamagedBy(Health health, float amount, GameObject source)
     {
+        if (amount > 0f && source != null && source.GetComponentInParent<PlayerVitals>() != null &&
+            state != EState.Flee && type != EnemyType.Tank)
+        {
+            playerRetaliationUntil = Time.time + damagedTargetMemory;
+            targetDecisionTimer = 0f;
+            state = EState.March;
+            return;
+        }
         if (state == EState.Flee && amount > 0f) deserterIdleTime = 0f;
         if (source == null)
         {
@@ -699,7 +762,9 @@ public class Enemy : MonoBehaviour
         if (preferredDirection.sqrMagnitude < 0.0001f) return false;
         preferredDirection.Normalize();
 
-        Vector3 targetDirection = selectedTarget != null
+        Vector3 targetDirection = selectedPlayer != null && selectedPlayer.IsAlive
+            ? selectedPlayer.transform.position - position
+            : selectedTarget != null
             ? selectedTarget.transform.position - position
             : preferredDirection;
         targetDirection.y = 0f;

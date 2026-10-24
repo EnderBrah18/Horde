@@ -45,6 +45,7 @@ public class Game : MonoBehaviour
     [Min(1f)] public float cameraEdgeSize = 28f;
     [Tooltip("Opcional. Se vazio, o modo combate procura um objeto com a tag Player.")]
     public Transform combatCameraTarget;
+    public bool PlayerControlEnabled => combatCameraMode && !lost;
     [Min(0.1f)] public float combatCameraFollowSpeed = 8f;
     [Min(1f)] public float buildCameraZoomSpeed = 10f;
     [Min(1f)] public float buildCameraMinZoom = 15f;
@@ -97,6 +98,14 @@ public class Game : MonoBehaviour
     public int deserted;
     public bool night;
     public bool lost;
+    string defeatReason = "O núcleo foi destruído";
+
+    public void PlayerDied()
+    {
+        if (lost) return;
+        defeatReason = "O jogador morreu";
+        lost = true;
+    }
 
     public Wallet wallet = new Wallet();
     public Structure core;
@@ -250,6 +259,13 @@ public class Game : MonoBehaviour
             grid.Configure(gridWidth, gridHeight, gridCellSize, pathBreakCost);
             BuildWorld();
         }
+    }
+
+    void Start()
+    {
+        var existingPlayer = GameObject.FindGameObjectWithTag("Player");
+        if (combatCameraTarget == null && existingPlayer != null)
+            combatCameraTarget = existingPlayer.transform;
     }
 
     void BuildSceneWorld()
@@ -650,8 +666,6 @@ public class Game : MonoBehaviour
         for (int i = 0; i < VisibleMenuCount && i < 9; i++)
             if (kb[Key.Digit1 + i].wasPressedThisFrame) selected = VisibleMenuStart + i;
 
-        UpdateCameraPan(mouse);
-
         if (sceneDrivenLayout && !night && !combatCameraMode)
         {
             float rotationStep = kb.leftAltKey.isPressed || kb.rightAltKey.isPressed ? 1f
@@ -731,6 +745,11 @@ public class Game : MonoBehaviour
             new Vector3(left, y, bottom), new Vector3(right, y, bottom),
             new Vector3(right, y, top), new Vector3(left, y, top)
         });
+    }
+
+    void LateUpdate()
+    {
+        if (!lost && Mouse.current != null) UpdateCameraPan(Mouse.current);
     }
 
     void UpdateCameraPan(Mouse mouse)
@@ -930,7 +949,15 @@ public class Game : MonoBehaviour
     bool CanPlace(BuildingData data, Vector3 position, out SpecialBuildPoint matchedSlot)
     {
         matchedSlot = null;
-        if (!sceneDrivenLayout) return CellFree(grid.WorldToCell(position));
+        if (!sceneDrivenLayout)
+        {
+            Vector2Int cell = grid.WorldToCell(position);
+            if (!CellFree(cell) || data == null) return false;
+            Vector3 center = grid.CellToWorld(cell) + Vector3.up;
+            Vector3 half = new Vector3(data.size.x * grid.cellSize * 0.5f, 2f,
+                data.size.z * grid.cellSize * 0.5f);
+            return !Physics.CheckBox(center, half, Quaternion.identity, 1 << 2, QueryTriggerInteraction.Ignore);
+        }
         if (buildArea == null || data == null) return false;
 
         float width = data.size.x;
@@ -953,7 +980,7 @@ public class Game : MonoBehaviour
         }
 
         if (!buildArea.Contains(candidate, radius)) return false;
-        int solidMask = (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12);
+        int solidMask = (1 << 2) | (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12);
         bool tall = data.shape == PrimitiveType.Cylinder || data.shape == PrimitiveType.Capsule;
         float height = data.size.y * (tall ? 2f : 1f);
         Vector3 halfExtents = new Vector3(width * 0.5f, Mathf.Max(0.5f, height * 0.5f), depth * 0.5f);
@@ -1215,14 +1242,14 @@ public class Game : MonoBehaviour
         float coreHp = core != null ? core.health.current : 0f;
         int displayedRound = night || lost ? round : round + 1;
         GUI.Label(new Rect(10, 8, 1400, 26),
-            $"Rodada {displayedRound}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Abates: {killed}   Desertores: {deserted}", st);
+            $"Rodada {displayedRound}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Jogador: {(PlayerVitals.I != null ? Mathf.Max(0f, PlayerVitals.I.Health.current) : 0f):0}   Abates: {killed}   Desertores: {deserted}", st);
 
         GUI.Label(new Rect(10, 32, 1400, 26), night
             ? modeHint + (combatCameraMode
-                ? "  |  Sobreviva à noite...  |  Câmera seguindo o jogador"
+                ? "  |  WASD: mover jogador  |  Sobreviva à noite..."
                 : "  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar")
             : combatCameraMode
-                ? modeHint + "  |  Câmera seguindo o jogador"
+                ? modeHint + "  |  WASD: mover jogador  |  Espaço: iniciar noite"
             : sceneDrivenLayout
                 ? modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar"
                 : modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
@@ -1345,7 +1372,7 @@ public class Game : MonoBehaviour
             var big = new GUIStyle(GUI.skin.label) { fontSize = 36, alignment = TextAnchor.MiddleCenter };
             big.normal.textColor = Color.white;
             GUI.Label(new Rect(0, Screen.height / 2f - 60, Screen.width, 120),
-                $"DERROTA — você sobreviveu a {Mathf.Max(0, round - 1)} noite(s)\n[R] reiniciar", big);
+                $"DERROTA — {defeatReason}\n[R] reiniciar", big);
         }
     }
 }

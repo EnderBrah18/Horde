@@ -20,6 +20,7 @@ public class GridWorld : MonoBehaviour
     int[,] tankDist;
     readonly Dictionary<Vector2Int, int[,]> targetDistances = new Dictionary<Vector2Int, int[,]>();
     readonly Dictionary<Vector2Int, int[,]> openTargetDistances = new Dictionary<Vector2Int, int[,]>();
+    Vector2Int? movingTargetCell;
 
     static readonly Vector2Int[] D4 =
         { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
@@ -65,6 +66,7 @@ public class GridWorld : MonoBehaviour
     {
         targetDistances.Clear();
         openTargetDistances.Clear();
+        movingTargetCell = null;
         tankDist = null;
     }
 
@@ -116,6 +118,17 @@ public class GridWorld : MonoBehaviour
         }
 
         return targetCell;
+    }
+
+    // Share one moving-player route between enemies, without retaining a full
+    // map-sized distance field for every cell the player has visited.
+    public bool TryMovingTargetRoute(Vector3 position, Vector2Int destination, out Vector3 direction,
+        float maxExtraDistance, float clearance)
+    {
+        if (movingTargetCell.HasValue && movingTargetCell.Value != destination)
+            openTargetDistances.Remove(movingTargetCell.Value);
+        movingTargetCell = destination;
+        return TryOpenRoute(position, destination, out direction, maxExtraDistance, clearance);
     }
 
     // Route through openings first. Structures other than the destination remain blocked.
