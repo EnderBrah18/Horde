@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66c792b8cb48418ab600dd21d426ccf1, type: 3}
-  m_Name: "Errante"
-  m_EditorClassIdentifier: "Assembly-CSharp::EnemyArchetypeData"
-  displayName: "Errante"
-  description: "Escolhe alvos locais sem foco cego."
+  m_Name: Errante
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyArchetypeData
+  displayName: Errante
+  description: Escolhe alvos locais sem foco cego.
   runtimeType: 0
   personality: 4
-  preferTankCover: 0
+  preferTankCover: 1
   tankCoverDistance: 4
   tankCoverSpacing: 2.5
   playerHuntStyle: 0

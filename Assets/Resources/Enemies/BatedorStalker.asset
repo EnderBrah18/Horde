@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66c792b8cb48418ab600dd21d426ccf1, type: 3}
-  m_Name: "BatedorStalker"
-  m_EditorClassIdentifier: "Assembly-CSharp::EnemyArchetypeData"
-  displayName: "BatedorStalker"
-  description: "Caça o jogador após detectá-lo."
+  m_Name: BatedorStalker
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyArchetypeData
+  displayName: BatedorStalker
+  description: "Ca\xE7a o jogador ap\xF3s detect\xE1-lo."
   runtimeType: 0
   personality: 2
-  preferTankCover: 0
+  preferTankCover: 1
   tankCoverDistance: 4
   tankCoverSpacing: 2.5
   playerHuntStyle: 0

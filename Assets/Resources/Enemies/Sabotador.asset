@@ -16,7 +16,7 @@ MonoBehaviour:
   description: Foco em torres.
   runtimeType: 0
   personality: 1
-  preferTankCover: 0
+  preferTankCover: 1
   tankCoverDistance: 4
   tankCoverSpacing: 2.5
   playerHuntStyle: 0

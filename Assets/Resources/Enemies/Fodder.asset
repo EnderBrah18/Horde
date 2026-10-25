@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66c792b8cb48418ab600dd21d426ccf1, type: 3}
-  m_Name: "Fodder"
-  m_EditorClassIdentifier: "Assembly-CSharp::EnemyArchetypeData"
-  displayName: "Fodder"
-  description: "Foco no núcleo."
+  m_Name: Fodder
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyArchetypeData
+  displayName: Fodder
+  description: "Foco no n\xFAcleo."
   runtimeType: 0
-  personality: 0
+  personality: 4
   preferTankCover: 0
   tankCoverDistance: 4
   tankCoverSpacing: 2.5

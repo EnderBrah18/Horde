@@ -1,0 +1,48 @@
+Pessoal, queria que vocês testassem o jogo e me contassem como foi a experiência. Não precisam entender como ele funciona por trás — o mais importante é dizer o que vocês perceberam jogando.
+
+O jogo ainda está em desenvolvimento, então os gráficos e a interface são provisórios. Queria feedback principalmente sobre:
+
+RECURSOS E CONSTRUÇÕES
+
+- Faltou ou sobrou algum recurso? Qual?
+- Foi fácil demais construir muitas torres e cercas?
+- Melhorar uma construção pareceu valer a pena?
+- Vocês precisaram escolher entre fortalecer as defesas e desenvolver a vila, ou conseguiram fazer tudo sem dificuldade?
+
+COMBATE E INIMIGOS
+
+- Os inimigos morreram rápido demais ou demoraram demais para morrer?
+- As construções pareceram frágeis ou resistentes demais?
+- Algum inimigo pareceu injusto, inofensivo ou difícil de entender?
+- Viram inimigos parados, presos, andando de forma estranha ou atacando algo sem motivo aparente?
+- Jogar com o personagem ajudou na defesa? O ataque foi confortável de usar?
+
+NOITES
+
+- Como a dificuldade mudou de uma noite para outra?
+- Houve alguma noite muito fácil ou um aumento brusco de dificuldade?
+- Existiram momentos longos sem nada para fazer?
+- Vocês sentiram necessidade de mudar a estratégia?
+
+EXPEDIÇÕES
+
+- Ficou claro como viajar, coletar recursos e voltar?
+- A viagem compensou o risco?
+- A capacidade de carregar recursos pareceu suficiente?
+- Se foram derrotados, conseguiram voltar à vila e continuar? A perda de recursos e de vida pareceu leve, justa ou pesada?
+
+MORTE NA VILA
+
+- Ao morrer, ficou claro que vocês voltariam depois da contagem?
+- Conseguiram usar a câmera livre durante a espera?
+- Depois de voltar, conseguiram jogar normalmente?
+- A partida terminou quando o núcleo foi destruído?
+
+CLAREZA E RITMO
+
+- Em algum momento vocês não souberam o que fazer ou como usar uma opção?
+- Conseguiram restaurar instalações, recrutar moradores e atribuir trabalho?
+- Quanto tempo jogaram e até qual dia chegaram?
+- Qual foi a parte mais divertida e qual foi a mais cansativa ou frustrante?
+
+Não precisam responder tudo. Comentem principalmente o que chamou atenção. Quando relatarem um problema, tentem dizer em qual dia aconteceu, o que estavam fazendo e o que esperavam que acontecesse. Se conseguirem, mandem um print ou vídeo junto.

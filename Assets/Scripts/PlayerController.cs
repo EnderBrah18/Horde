@@ -9,6 +9,8 @@ public sealed class PlayerController : MonoBehaviour
 {
     [Header("Movimento")]
     [Min(0.1f)] public float moveSpeed = 8f;
+    [Tooltip("Multiplicador de velocidade ao segurar Shift esquerdo ou direito.")]
+    [Min(1f)] public float sprintMultiplier = 1.75f;
     [Min(1f)] public float turnSpeed = 720f;
     [Header("Colisão (metros, com escala do Transform igual a 1)")]
     [Min(0.1f)] public float radius = 0.45f;
@@ -23,6 +25,7 @@ public sealed class PlayerController : MonoBehaviour
     void OnValidate()
     {
         moveSpeed = Mathf.Max(0.1f, moveSpeed);
+        sprintMultiplier = Mathf.Max(1f, sprintMultiplier);
         turnSpeed = Mathf.Max(1f, turnSpeed);
         radius = Mathf.Max(0.1f, radius);
         height = Mathf.Max(radius * 2f, height);
@@ -52,7 +55,9 @@ public sealed class PlayerController : MonoBehaviour
         right.y = 0f;
         right.Normalize();
         Vector3 forward = Vector3.Cross(right, Vector3.up);
-        Vector3 motion = (right * input.x + forward * input.y) * moveSpeed * Time.deltaTime;
+        bool sprinting = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+        float speed = moveSpeed * (sprinting ? Mathf.Max(1f, sprintMultiplier) : 1f);
+        Vector3 motion = (right * input.x + forward * input.y) * speed * Time.deltaTime;
         // Substeps keep river and boundary checks valid during slow frames.
         int steps = Mathf.Max(1, Mathf.CeilToInt(motion.magnitude / Mathf.Max(0.05f, radius * 0.5f)));
         Vector3 before = transform.position;
