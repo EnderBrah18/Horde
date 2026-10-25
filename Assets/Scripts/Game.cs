@@ -1200,11 +1200,6 @@ public partial class Game : MonoBehaviour
         }
         }
 
-        GUI.Label(new Rect(10, Screen.height - 54, 1600, 26),
-            "Objective: Núcleo | Saboteur: torres | PlayerHunter: jogador | Simple: alvos próximos | NpcHunter: reservado | Branco: líder", st);
-        GUI.Label(new Rect(10, Screen.height - 30, 1600, 26),
-            "Vermelho = Fanático   Laranja = Cobiçoso   Rosa = Covarde   Cinza = desertor", st);
-
         DrawInteractionUI();
         if (IsPlayerRespawning && !lost)
             GUI.Box(new Rect(Screen.width / 2f - 210f, Screen.height / 2f - 45f, 420f, 90f),
