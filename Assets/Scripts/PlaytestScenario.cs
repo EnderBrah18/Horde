@@ -31,6 +31,7 @@ public class PlaytestScenario : ScriptableObject
     [Min(1f)] public float coreHealth = 300f;
 
     [Header("Ondas")]
+    public NightDirectorData nightDirector;
     [FormerlySerializedAs("initialGroups"), Min(1)] public int groupsPerWave = 3;
     [Min(1)] public int initialWaves = 3;
     [FormerlySerializedAs("groupsPerRounds"), Min(1)] public int nightsPerExtraWave = 2;
@@ -91,6 +92,7 @@ public class PlaytestScenario : ScriptableObject
         game.startCrystals = startCrystals;
         game.coreHealth = coreHealth;
         game.groupsPerWave = groupsPerWave;
+        if (nightDirector != null) game.nightDirector = nightDirector;
         game.initialWaves = initialWaves;
         game.waveInterval = waveInterval;
         game.nightsPerExtraWave = nightsPerExtraWave;

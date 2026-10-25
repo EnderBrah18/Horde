@@ -36,6 +36,7 @@ public partial class Game
     public float tacticalGroupChance=0.7f,hunterBaseChance=0.3f,hunterChancePerRound=0.05f,hunterChanceCap=0.6f;
     public bool varyFanaticBraveryForTesting=true;
     public object PlanForTest(int night)=>PlanNight(night);
+    public bool CompleteForTest(int night,int total)=>nightPopulation.RecordCompleted(night,total);
 }
 static class NightDirectorTests
 {
@@ -118,6 +119,17 @@ static class NightDirectorTests
             var game=new Game {nightDirector=director}; var p=game.PlanForTest(n); int actual=0;
             foreach(var group in (Array)Field(p,"groups")) actual+=((Array)Field(group,"members")).Length;
             Check(actual==(int)Field(p,"total") && actual>=45,"planned count remains exact despite changing number of waves");
+        }
+        var run=new Game {nightDirector=director};
+        int firstPeak=45, secondPeak=0;
+        for(int night=1;night<=11;night++)
+        {
+            var plan=run.PlanForTest(night); int total=(int)Field(plan,"total");
+            if(night<=5)firstPeak=Math.Max(firstPeak,total);
+            if(night>=6 && night<=10)secondPeak=Math.Max(secondPeak,total);
+            if(night==6)Check(run.CurrentNightMinimum==firstPeak,"actual planner inherits first block peak on sixth night");
+            if(night==11)Check(run.CurrentNightMinimum==secondPeak,"actual planner inherits second block peak on eleventh night");
+            if(!run.CompleteForTest(night,total))throw new Exception("planned complete night rejected");
         }
         Console.WriteLine("PASS: "+checks+" night director checks (including 5,000 population samples)");
     }

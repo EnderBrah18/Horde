@@ -49,6 +49,9 @@ for node in (root / 'Assets/Resources/Expeditions/Nodes').glob('*.asset'):
     node_text = node.read_text(encoding='utf-8')
     for guid in re.findall(r'guid: (\w+)', node_text):
         check(guid in guids, node.name + ': resource/script reference resolves')
+for night_asset in (root / 'Assets/Resources/NightDirector').rglob('*.asset'):
+    for guid in re.findall(r'guid: (\w+)', night_asset.read_text(encoding='utf-8')):
+        check(guid in guids, night_asset.name + ': night data reference resolves')
 check('  cargoCapacity: 100' in destination and '  resourceNodes:' in destination, 'cargo and resource types configured')
 for script in (root / 'Assets/Scripts/Expeditions').glob('*.cs'):
     check(Path(str(script) + '.meta').exists(), script.name + ': metadata exists')
