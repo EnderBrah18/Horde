@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 using Unity.Cinemachine;
 using UnityEngine.Serialization;
 
-// Coloque este script em UM GameObject vazio na cena. Ele cria todo o resto.
+// Coordena a vila, os modos de jogo e a progressão da run.
 public partial class Game : MonoBehaviour
 {
     public static Game I;
@@ -15,66 +15,37 @@ public partial class Game : MonoBehaviour
     public Material litMaterial;
     public Material lineMaterial;
 
-    [Header("Recursos iniciais")]
-    public int startWood = 60;
-    [FormerlySerializedAs("startSupplies")] public int startCrystals = 6;
+    [Header("Economia da run")]
+    public RunEconomyData economy;
 
-    [Header("Amanhecer (temporário, até os círculos mágicos)")]
-    public int dawnWood = 10;
-    [FormerlySerializedAs("dawnSuppliesBase")] public int dawnCrystalsBase = 3;
-
-    [Header("Mapa de playtest")]
-    [Range(11, 301)] public int gridWidth = 21;
-    [Range(11, 301)] public int gridHeight = 21;
-    [Range(21, 301)] public int maxGridDimension = 41;
+    [Header("Navegação da vila")]
+    [Tooltip("Mapa de navegação. A área de construção é configurada no VillageBuildArea.")]
     [Min(41)] public int sceneMapDimension = 281;
     [Min(0.1f)] public float gridCellSize = 2f;
     [Min(0)] public int pathBreakCost = 10;
-    [Min(0)] public int spawnBuildClearance = 1;
-    [Min(0)] public int coreBuildClearance;
-    public SpawnEdges spawnEdges = SpawnEdges.All;
 
-    [Header("Limites do grid de construção")]
-    [Tooltip("0 usa a largura total do mapa. Valores menores centralizam uma área construída menor.")]
-    [Min(0)] public int buildGridWidth;
-    [Tooltip("0 usa a altura total do mapa. Valores menores centralizam uma área construída menor.")]
-    [Min(0)] public int buildGridHeight;
-    public Vector2Int buildGridOffset;
-
-    [Header("Câmera de playtest")]
+    [Header("Câmera e posicionamento")]
     [Min(1f)] public float cameraPanSpeed = 40f;
     [Min(1f)] public float cameraEdgeSize = 28f;
     [Tooltip("Opcional. Se vazio, o modo combate procura um objeto com a tag Player.")]
     public Transform combatCameraTarget;
-    public bool PlayerControlEnabled => combatCameraMode && !lost && !expeditionTransition;
+    public bool PlayerControlEnabled => combatCameraMode && !lost && !expeditionTransition && !IsPlayerRespawning &&
+        PlayerVitals.I != null && PlayerVitals.I.IsAlive;
     [Min(0.1f)] public float combatCameraFollowSpeed = 8f;
     [Min(1f)] public float buildCameraZoomSpeed = 10f;
     [Min(1f)] public float buildCameraMinZoom = 15f;
     [Min(1f)] public float buildCameraMaxZoom = 60f;
     [Min(0.1f)] public float buildPlacementStep = 0.5f;
 
-    [Header("Playtest")]
+    [Header("Núcleo e diagnóstico")]
     [Min(1f)] public float coreHealth = 300f;
     [Min(1)] public int eventLogEntries = 8;
     public bool showEventLog = true;
     [Tooltip("Registra no Console as decisões de alvo e a direção de movimento dos inimigos.")]
     public bool debugEnemyTargeting;
-    public PlaytestScenario scenario;
-
-    [Header("Balanceamento de inimigos")]
-    public EnemyBalanceSettings commonEnemy = new EnemyBalanceSettings { tacticRadius = 16f };
-    public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
-    {
-        maxHealth = 140f,
-        knockbackResistance = 0.8f,
-        speed = 2.2f,
-        damage = 14f,
-        tacticRadius = 100f,
-        scale = new Vector3(1.8f, 0.9f, 1.8f)
-    };
 
     [Header("Balanceamento das noites")]
-    [Tooltip("Grupos que surgem dentro de cada leva. A próxima leva espera todos serem resolvidos.")]
+    [Tooltip("Grupos por leva na abertura e referência da distribuição equilibrada depois dela. O Night Director pode concentrar ou dispersar os ataques.")]
     [FormerlySerializedAs("initialGroups"), Min(1)] public int groupsPerWave = 3;
     [Min(1)] public int initialWaves = 3;
     [FormerlySerializedAs("groupsPerRounds"), Min(1)] public int nightsPerExtraWave = 2;
@@ -85,9 +56,9 @@ public partial class Game : MonoBehaviour
     [Tooltip("Bônus fixo por grupo da primeira noite. Depois dela o total é decidido pelo Night Director.")]
     [Min(0)] public int commonsPerRound = 1;
     [Min(1)] public int tankEveryRounds = 2;
-    [Range(0f, 1f)] public float hunterBaseChance = 0.3f;
-    [Range(0f, 1f)] public float hunterChancePerRound = 0.05f;
-    [Range(0f, 1f)] public float hunterChanceCap = 0.6f;
+    [Range(0f, 1f)] [FormerlySerializedAs("hunterBaseChance")] public float saboteurBaseChance = 0.3f;
+    [Range(0f, 1f)] [FormerlySerializedAs("hunterChancePerRound")] public float saboteurChancePerRound = 0.05f;
+    [Range(0f, 1f)] [FormerlySerializedAs("hunterChanceCap")] public float saboteurChanceCap = 0.6f;
     [Min(0f)] public float spawnInterval = 0.4f;
     [Min(0f)] public float groupInterval = 3f;
 
@@ -99,55 +70,43 @@ public partial class Game : MonoBehaviour
     [Tooltip("Temporário para testar fusões: Fanáticos comuns recebem bravura entre 1 e 1,2.")]
     public bool varyFanaticBraveryForTesting = true;
 
-    [Header("Estado (somente leitura)")]
-    [FormerlySerializedAs("round"), SerializeField] int nightsStarted;
+    [FormerlySerializedAs("round"), SerializeField, HideInInspector] int nightsStarted;
     // Compatibility for economy/refund consumers: this is a night ID, never a wave.
     public int round => nightsStarted;
     public int Day => VillageProgressionRules.DayNumber(nightsStarted, night, lost);
     public int CurrentWave { get; private set; }
     public int TotalWaves { get; private set; }
-    public int killed;
-    public int deserted;
-    public bool night;
-    public bool lost;
+    [System.NonSerialized] public int killed;
+    [System.NonSerialized] public int deserted;
+    [System.NonSerialized] public bool night;
+    [System.NonSerialized] public bool lost;
     string defeatReason = "O núcleo foi destruído";
 
     public void PlayerDied()
     {
         if (lost) return;
-        defeatReason = "O jogador morreu";
-        lost = true;
+        if (IsOnExpedition)
+        {
+            if (!expeditionTransition) StartCoroutine(ReturnFromExpedition(true));
+            return;
+        }
+        if (!IsPlayerRespawning) StartCoroutine(RespawnPlayerInVillage());
     }
 
     // Runtime balances use a dictionary, which Unity does not serialize.
     [System.NonSerialized] public Wallet wallet = new Wallet();
-    public Structure core;
+    [System.NonSerialized] public Structure core;
 
     public event System.Action<GameplayEvent> GameplayEventRaised;
 
-    static string selectedScenarioName;
-    public static void PrepareNewRun() { selectedScenarioName = null; }
-    readonly List<PlaytestScenario> scenarios = new List<PlaytestScenario>();
     readonly List<GameplayEvent> recentEvents = new List<GameplayEvent>();
-    bool scenarioChangePending;
 
     void OnValidate()
     {
-        startWood = Mathf.Max(0, startWood);
-        startCrystals = Mathf.Max(0, startCrystals);
-        dawnWood = Mathf.Max(0, dawnWood);
-        dawnCrystalsBase = Mathf.Max(0, dawnCrystalsBase);
-        maxGridDimension = Mathf.Clamp(maxGridDimension, 21, 301);
-        gridWidth = Mathf.Clamp(gridWidth, 11, maxGridDimension);
-        gridHeight = Mathf.Clamp(gridHeight, 11, maxGridDimension);
         sceneMapDimension = Mathf.Clamp(sceneMapDimension, 41, 301);
         if (sceneMapDimension % 2 == 0) sceneMapDimension++;
         gridCellSize = Mathf.Max(0.1f, gridCellSize);
         pathBreakCost = Mathf.Max(0, pathBreakCost);
-        spawnBuildClearance = Mathf.Max(0, spawnBuildClearance);
-        coreBuildClearance = Mathf.Max(0, coreBuildClearance);
-        buildGridWidth = Mathf.Max(0, buildGridWidth);
-        buildGridHeight = Mathf.Max(0, buildGridHeight);
         cameraPanSpeed = Mathf.Max(1f, cameraPanSpeed);
         cameraEdgeSize = Mathf.Max(1f, cameraEdgeSize);
         combatCameraFollowSpeed = Mathf.Max(0.1f, combatCameraFollowSpeed);
@@ -165,30 +124,15 @@ public partial class Game : MonoBehaviour
         baseCommonEnemies = Mathf.Max(0, baseCommonEnemies);
         commonsPerRound = Mathf.Max(0, commonsPerRound);
         tankEveryRounds = Mathf.Max(1, tankEveryRounds);
-        hunterBaseChance = Mathf.Clamp01(hunterBaseChance);
-        hunterChancePerRound = Mathf.Clamp01(hunterChancePerRound);
-        hunterChanceCap = Mathf.Clamp01(hunterChanceCap);
+        saboteurBaseChance = Mathf.Clamp01(saboteurBaseChance);
+        saboteurChancePerRound = Mathf.Clamp01(saboteurChancePerRound);
+        saboteurChanceCap = Mathf.Clamp01(saboteurChanceCap);
         spawnInterval = Mathf.Max(0f, spawnInterval);
         groupInterval = Mathf.Max(0f, groupInterval);
         groupMinSize = Mathf.Max(1, groupMinSize);
         loneWolfChance = Mathf.Clamp01(loneWolfChance);
         tacticalGroupChance = Mathf.Clamp01(tacticalGroupChance);
         groupMergeRadius = Mathf.Max(0f, groupMergeRadius);
-        ClampEnemyBalance(commonEnemy);
-        ClampEnemyBalance(tankEnemy);
-    }
-
-    static void ClampEnemyBalance(EnemyBalanceSettings settings)
-    {
-        if (settings == null) return;
-        settings.maxHealth = Mathf.Max(1f, settings.maxHealth);
-        settings.speed = Mathf.Max(0f, settings.speed);
-        settings.damage = Mathf.Max(0f, settings.damage);
-        settings.attackCooldown = Mathf.Max(0.01f, settings.attackCooldown);
-        settings.attackRange = Mathf.Max(0f, settings.attackRange);
-        settings.tacticRadius = Mathf.Max(0f, settings.tacticRadius);
-        settings.knockbackResistance = Mathf.Clamp01(settings.knockbackResistance);
-        settings.scale = new Vector3(Mathf.Max(0.1f, settings.scale.x), Mathf.Max(0.1f, settings.scale.y), Mathf.Max(0.1f, settings.scale.z));
     }
 
     static Material baseMat;
@@ -213,7 +157,6 @@ public partial class Game : MonoBehaviour
     Vector2Int hoverCell;
     Vector3 hoverPosition;
     float buildRotation;
-    bool sceneDrivenLayout;
     bool combatCameraMode;
     bool draggingBuildCamera;
     bool snapBuildPosition = true;
@@ -245,19 +188,21 @@ public partial class Game : MonoBehaviour
         Enemy.All.Clear();
         Structure.All.Clear();
 
-        scenarios.AddRange(Resources.LoadAll<PlaytestScenario>("PlaytestScenarios"));
-        scenarios.Sort((a, b) => string.Compare(a.displayName, b.displayName, System.StringComparison.Ordinal));
-        if (!string.IsNullOrEmpty(selectedScenarioName))
-        {
-            var selectedScenario = scenarios.Find(s => s.name == selectedScenarioName);
-            if (selectedScenario != null) scenario = selectedScenario;
-        }
         buildArea = FindAnyObjectByType<VillageBuildArea>();
-        sceneDrivenLayout = buildArea != null && GameObject.FindGameObjectWithTag("Nucleo") != null;
-        if (scenario != null) scenario.ApplyTo(this);
+        if (buildArea == null || GameObject.FindGameObjectWithTag("Nucleo") == null)
+        {
+            Debug.LogError("A cena da vila precisa de VillageBuildArea e de um objeto com a tag Nucleo.", this);
+            enabled = false;
+            return;
+        }
 
-        wallet.Wood = startWood;
-        wallet.Crystals = startCrystals;
+        if (economy == null) economy = Resources.Load<RunEconomyData>("Economy/DefaultRunEconomy");
+        if (economy == null || !wallet.TryDeposit(economy.startingStock))
+        {
+            Debug.LogError("Configure um RunEconomyData com estoque inicial válido.", this);
+            enabled = false;
+            return;
+        }
 
         menu = new List<BuildingData>(Resources.LoadAll<BuildingData>("Buildings"));
         menu.RemoveAll(building => !building.showInBuildMenu);
@@ -267,16 +212,8 @@ public partial class Game : MonoBehaviour
         BuildMenuCategories();
 
         grid = gameObject.AddComponent<GridWorld>();
-        if (sceneDrivenLayout)
-        {
-            grid.Configure(sceneMapDimension, sceneMapDimension, gridCellSize, pathBreakCost);
-            BuildSceneWorld();
-        }
-        else
-        {
-            grid.Configure(gridWidth, gridHeight, gridCellSize, pathBreakCost);
-            BuildWorld();
-        }
+        grid.Configure(sceneMapDimension, sceneMapDimension, gridCellSize, pathBreakCost);
+        BuildSceneWorld();
     }
 
     void Start()
@@ -481,73 +418,15 @@ public partial class Game : MonoBehaviour
         return false;
     }
 
-    void BuildWorld()
-    {
-        float cs = grid.cellSize;
-        float w = grid.width * cs, h = grid.height * cs;
-        Vector3 o = transform.position;
-
-        // Chão xadrez
-        var floor = Prim(PrimitiveType.Cube, o + new Vector3(0, -0.1f, 0), new Vector3(w, 0.2f, h), Color.white);
-        floor.name = "Floor";
-        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false)
-        { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
-        var a = new Color(0.22f, 0.24f, 0.28f);
-        var b = new Color(0.28f, 0.30f, 0.35f);
-        tex.SetPixels(new[] { a, b, b, a });
-        tex.Apply();
-        var m = floor.GetComponent<Renderer>().material;
-        m.mainTexture = tex;
-        m.mainTextureScale = new Vector2(grid.width / 2f, grid.height / 2f);
-        m.color = Color.white;
-
-        // Entradas configuráveis para variar as estratégias testadas no mapa.
-        if ((spawnEdges & SpawnEdges.North) != 0) spawns.Add(new Vector2Int(grid.width / 2, grid.height - 1));
-        if ((spawnEdges & SpawnEdges.South) != 0) spawns.Add(new Vector2Int(grid.width / 2, 0));
-        if ((spawnEdges & SpawnEdges.West) != 0) spawns.Add(new Vector2Int(0, grid.height / 2));
-        if ((spawnEdges & SpawnEdges.East) != 0) spawns.Add(new Vector2Int(grid.width - 1, grid.height / 2));
-        if (spawns.Count == 0) spawns.Add(new Vector2Int(grid.width / 2, 0));
-        foreach (var s in spawns)
-            Prim(PrimitiveType.Cube, grid.CellToWorld(s) + Vector3.up * 0.03f,
-                 new Vector3(cs * 0.95f, 0.05f, cs * 0.95f), new Color(0.6f, 0.1f, 0.1f));
-
-        DrawBuildGridBoundary();
-
-        // O núcleo é um objetivo do mapa, não uma construção posicionável.
-        var coreObject = Prim(PrimitiveType.Cube, grid.CellToWorld(grid.CoreCell) + Vector3.up * 0.9f,
-            new Vector3(0.9f * cs, 1.8f, 0.9f * cs), new Color(0.2f, 0.4f, 1f));
-        coreObject.name = "Coração";
-        coreObject.tag = "Nucleo";
-        coreObject.layer = LayerMask.NameToLayer("Structures");
-        coreObject.AddComponent<BoxCollider>();
-        core = RegisterSceneStructure(coreObject, StructureKind.Core, coreHealth);
-        core.health.Died += _ =>
-        {
-            lost = true;
-            RaiseGameplayEvent(GameplayEventType.CoreDestroyed, coreObject, 0f, "O Coração foi destruído");
-        };
-
-        // Cursor de construção
-        cursor = Prim(PrimitiveType.Cube, Vector3.zero, new Vector3(cs * 0.95f, 0.1f, cs * 0.95f), Color.green);
-        cursor.name = "Cursor";
-
-        grid.Recalc();
-    }
-
     // Cria qualquer construção a partir de um BuildingData.
-    Structure MakeStructure(BuildingData d, Vector2Int cell)
-    {
-        return MakeStructureAt(d, grid.CellToWorld(cell), Quaternion.identity, true);
-    }
 
-    Structure MakeStructureAt(BuildingData d, Vector3 groundPosition, Quaternion rotation, bool scaleByCell)
+    Structure MakeStructureAt(BuildingData d, Vector3 groundPosition, Quaternion rotation)
     {
-        float cs = scaleByCell ? grid.cellSize : 1f;
         bool tall = d.shape == PrimitiveType.Cylinder || d.shape == PrimitiveType.Capsule;   // altura = 2 * escala Y
         float centerY = d.size.y * (tall ? 2f : 1f) / 2f;
 
         var go = Prim(d.shape, groundPosition + Vector3.up * centerY,
-                      new Vector3(d.size.x * cs, d.size.y, d.size.z * cs), d.color);
+                      new Vector3(d.size.x, d.size.y, d.size.z), d.color);
         go.name = d.displayName;
         go.transform.rotation = rotation;
         // Player-built walls are fences, separate from the ancient wall ring in the scene.
@@ -656,6 +535,7 @@ public partial class Game : MonoBehaviour
     // ---------- Loop ----------
     void Update()
     {
+        FlushDeferredCargo();
         var kb = Keyboard.current;
         var mouse = Mouse.current;
         if (kb == null || mouse == null) return;
@@ -671,10 +551,10 @@ public partial class Game : MonoBehaviour
         }
 
         if (kb.f3Key.wasPressedThisFrame) showEventLog = !showEventLog;
-        if (kb.f1Key.wasPressedThisFrame) SelectNextScenario();
+        if (IsPlayerRespawning) { CloseInteraction(); return; }
         if (kb.tabKey.wasPressedThisFrame) { combatCameraMode = !combatCameraMode; CloseInteraction(); }
         if (kb.escapeKey.wasPressedThisFrame || kb.digit0Key.wasPressedThisFrame) EmptyHand();
-        if (sceneDrivenLayout && kb.cKey.wasPressedThisFrame && core != null)
+        if (kb.cKey.wasPressedThisFrame && core != null)
             CenterCameraOn(core.transform.position);
 
         if (msgTimer > 0f) { msgTimer -= Time.deltaTime; if (msgTimer <= 0f) msg = ""; }
@@ -686,7 +566,7 @@ public partial class Game : MonoBehaviour
         for (int i = 0; i < VisibleMenuCount && i < 9; i++)
             if (IsConstructionMode && kb[Key.Digit1 + i].wasPressedThisFrame) EquipBuilding(VisibleMenuStart + i);
 
-        if (sceneDrivenLayout && IsConstructionMode && Current != null)
+        if (IsConstructionMode && Current != null)
         {
             float rotationStep = kb.leftAltKey.isPressed || kb.rightAltKey.isPressed ? 1f
                 : kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed ? 15f : 5f;
@@ -718,55 +598,6 @@ public partial class Game : MonoBehaviour
     }
 
     BuildingData Current => (selected >= 0 && selected < activeMenu.Count) ? activeMenu[selected] : null;
-
-    bool CellFree(Vector2Int c)
-    {
-        if (!grid.InBounds(c) || grid.Get(c) != null) return false;
-        if (!InBuildGrid(c)) return false;
-        foreach (var s in spawns)
-            if (Mathf.Abs(s.x - c.x) <= spawnBuildClearance && Mathf.Abs(s.y - c.y) <= spawnBuildClearance) return false;
-        if (Mathf.Abs(grid.CoreCell.x - c.x) <= coreBuildClearance &&
-            Mathf.Abs(grid.CoreCell.y - c.y) <= coreBuildClearance) return false;
-        return true;
-    }
-
-    bool InBuildGrid(Vector2Int c)
-    {
-        int width = buildGridWidth <= 0 ? grid.width : Mathf.Min(buildGridWidth, grid.width);
-        int height = buildGridHeight <= 0 ? grid.height : Mathf.Min(buildGridHeight, grid.height);
-        int minX = Mathf.Clamp((grid.width - width) / 2 + buildGridOffset.x, 0, grid.width - width);
-        int minY = Mathf.Clamp((grid.height - height) / 2 + buildGridOffset.y, 0, grid.height - height);
-        return c.x >= minX && c.x < minX + width && c.y >= minY && c.y < minY + height;
-    }
-
-    void DrawBuildGridBoundary()
-    {
-        int width = buildGridWidth <= 0 ? grid.width : Mathf.Min(buildGridWidth, grid.width);
-        int height = buildGridHeight <= 0 ? grid.height : Mathf.Min(buildGridHeight, grid.height);
-        if (width == grid.width && height == grid.height && buildGridOffset == Vector2Int.zero) return;
-
-        int minX = Mathf.Clamp((grid.width - width) / 2 + buildGridOffset.x, 0, grid.width - width);
-        int minY = Mathf.Clamp((grid.height - height) / 2 + buildGridOffset.y, 0, grid.height - height);
-        float half = grid.cellSize * 0.5f;
-        float left = grid.CellToWorld(new Vector2Int(minX, minY)).x - half;
-        float right = grid.CellToWorld(new Vector2Int(minX + width - 1, minY)).x + half;
-        float bottom = grid.CellToWorld(new Vector2Int(minX, minY)).z - half;
-        float top = grid.CellToWorld(new Vector2Int(minX, minY + height - 1)).z + half;
-        float y = grid.transform.position.y + 0.12f;
-
-        var border = new GameObject("BuildGridBoundary").AddComponent<LineRenderer>();
-        border.useWorldSpace = true;
-        border.loop = true;
-        border.positionCount = 4;
-        border.startWidth = border.endWidth = 0.08f;
-        border.startColor = border.endColor = new Color(0.35f, 1f, 0.55f, 0.9f);
-        border.material = lineMaterial != null ? new Material(lineMaterial) : new Material(Shader.Find("Sprites/Default"));
-        border.SetPositions(new[]
-        {
-            new Vector3(left, y, bottom), new Vector3(right, y, bottom),
-            new Vector3(right, y, top), new Vector3(left, y, top)
-        });
-    }
 
     void LateUpdate()
     {
@@ -911,7 +742,7 @@ public partial class Game : MonoBehaviour
         if (plane.Raycast(ray, out float d))
         {
             hoverPosition = ray.GetPoint(d);
-            if (sceneDrivenLayout && snapBuildPosition && !Keyboard.current.leftAltKey.isPressed && !Keyboard.current.rightAltKey.isPressed)
+            if (snapBuildPosition && !Keyboard.current.leftAltKey.isPressed && !Keyboard.current.rightAltKey.isPressed)
             {
                 hoverPosition.x = Mathf.Round(hoverPosition.x / buildPlacementStep) * buildPlacementStep;
                 hoverPosition.z = Mathf.Round(hoverPosition.z / buildPlacementStep) * buildPlacementStep;
@@ -927,12 +758,9 @@ public partial class Game : MonoBehaviour
                 bool placeable = CanPlace(cur, hoverPosition, out slot);
                 bool ok = placeable && wallet.CanAfford(cur.costs);
                 Vector3 previewPosition = slot != null ? slot.transform.position : hoverPosition;
-                if (!sceneDrivenLayout) previewPosition = grid.CellToWorld(hoverCell);
                 cursor.transform.position = previewPosition + Vector3.up * 0.06f;
-                cursor.transform.rotation = Quaternion.Euler(0f, sceneDrivenLayout ? buildRotation : 0f, 0f);
-                cursor.transform.localScale = sceneDrivenLayout
-                    ? new Vector3(Mathf.Max(0.5f, cur.size.x), 0.12f, Mathf.Max(0.5f, cur.size.z))
-                    : new Vector3(grid.cellSize * 0.95f, 0.1f, grid.cellSize * 0.95f);
+                cursor.transform.rotation = Quaternion.Euler(0f, buildRotation, 0f);
+                cursor.transform.localScale = new Vector3(Mathf.Max(0.5f, cur.size.x), 0.12f, Mathf.Max(0.5f, cur.size.z));
                 cursor.GetComponent<Renderer>().material.color =
                     ok ? new Color(0.2f, 1f, 0.3f) : new Color(1f, 0.2f, 0.2f);
                 UpdatePreviewOutline(cursor.transform.position, cursor.transform.localScale,
@@ -954,32 +782,21 @@ public partial class Game : MonoBehaviour
         if (!CanPlace(d, hoverPosition, out slot)) { Say("Não dá para construir aqui."); return; }
         if (!wallet.Spend(d.costs)) { Say("Recursos insuficientes."); return; }
 
-        if (sceneDrivenLayout)
         {
             Vector3 position = slot != null ? slot.transform.position : hoverPosition;
-            Structure placed = MakeStructureAt(d, position, Quaternion.Euler(0f, buildRotation, 0f), false);
+            Structure placed = MakeStructureAt(d, position, Quaternion.Euler(0f, buildRotation, 0f));
             if (slot != null)
             {
                 slot.occupant = placed;
                 slot.occupied = true;
             }
         }
-        else MakeStructure(d, hoverCell);
         grid.Recalc();
     }
 
     bool CanPlace(BuildingData data, Vector3 position, out SpecialBuildPoint matchedSlot, Structure ignored = null)
     {
         matchedSlot = null;
-        if (!sceneDrivenLayout)
-        {
-            Vector2Int cell = grid.WorldToCell(position);
-            if (data == null || (!CellFree(cell) && (ignored == null || grid.Get(cell) != ignored))) return false;
-            Vector3 center = grid.CellToWorld(cell) + Vector3.up;
-            Vector3 half = new Vector3(data.size.x * grid.cellSize * 0.5f, 2f,
-                data.size.z * grid.cellSize * 0.5f);
-            return !Physics.CheckBox(center, half, Quaternion.identity, 1 << 2, QueryTriggerInteraction.Ignore);
-        }
         if (buildArea == null || data == null) return false;
 
         float width = data.size.x;
@@ -1062,25 +879,10 @@ public partial class Game : MonoBehaviour
         GameplayEventRaised?.Invoke(gameEvent);
     }
 
-    void SelectNextScenario()
-    {
-        if (scenarios.Count == 0)
-        {
-            Say("Sem cenários. Use Tools > Village > Create Playtest Scenario Templates no Editor.");
-            return;
-        }
-
-        int index = scenarios.FindIndex(s => s.name == selectedScenarioName);
-        index = (index + 1) % scenarios.Count;
-        selectedScenarioName = scenarios[index].name;
-        scenarioChangePending = true;
-        Say($"Próximo cenário: {scenarios[index].displayName}. Aperte R para reiniciar e aplicar.", 5f);
-    }
-
     // ---------- Noite ----------
     IEnumerator RunNight()
     {
-        if (night || lost || IsOnExpedition || expeditionTransition) yield break;
+        if (night || lost || IsOnExpedition || expeditionTransition || IsPlayerRespawning) yield break;
         if (spawns.Count == 0) { Say("Não há pontos de spawn configurados para esta noite."); yield break; }
 
         NightPlan nightPlan = null;
@@ -1100,7 +902,8 @@ public partial class Game : MonoBehaviour
             $"Noite do Dia {Day} começou • {TotalWaves} levas • {PlannedNightEnemies} inimigos • mínimo {CurrentNightMinimum}");
 
         bool endedByDesertion = false;
-        var waves = new NightWaveSequence(TotalWaves, nightPlan.groupsPerWave);
+        var waves = new NightWaveSequence(nightPlan.waveGroupCounts);
+        int plannedGroupIndex = 0;
         while (!lost)
         {
             CurrentWave = waves.CurrentWave;
@@ -1109,7 +912,7 @@ public partial class Game : MonoBehaviour
             for (int group = 0; group < waves.GroupsPerWave && !lost; group++)
             {
                 var cell = spawns[Random.Range(0, spawns.Count)];
-                yield return SpawnGroup(cell, nightPlan.groups[(CurrentWave - 1) * waves.GroupsPerWave + group]);
+                yield return SpawnGroup(cell, nightPlan.groups[plannedGroupIndex++]);
                 if (lost) break;
                 waves.RecordGroupSpawned();
                 if (group + 1 < waves.GroupsPerWave)
@@ -1147,16 +950,13 @@ public partial class Game : MonoBehaviour
         nightPopulation.RecordCompleted(round, SpawnedThisNight);
         if (core != null && core.health != null) core.health.RestoreFull();
         if (PlayerVitals.I != null) PlayerVitals.I.RestoreAtDawn();
-        int crystals = dawnCrystalsBase + round;
-        wallet.Add(DefaultResources.Wood, dawnWood);
-        wallet.Add(DefaultResources.Crystals, crystals);
+        bool granted = economy != null && wallet.TryDeposit(economy.dawnGrant);
         string dawnDetails = endedByDesertion
             ? $"Amanheceu após a deserção dos inimigos restantes na noite {round}"
             : $"Amanheceu após a noite {round}";
         RaiseGameplayEvent(GameplayEventType.DawnReached, null, round, dawnDetails);
-        Say(endedByDesertion
-            ? $"Os inimigos restantes fugiram. Amanheceu! +{crystals} {DefaultResources.Crystals.displayName} e +{dawnWood} {DefaultResources.Wood.displayName}."
-            : $"Amanheceu! Chegaram +{crystals} {DefaultResources.Crystals.displayName} e +{dawnWood} {DefaultResources.Wood.displayName}. Construa e aperte Espaço.", 5f);
+        Say(granted ? "Amanheceu! A reserva diária e a produção das instalações operacionais chegaram ao estoque. Prepare as defesas."
+            : "Amanheceu! Confira a configuração ou os limites do estoque da reserva diária.", 5f);
         DiscoverExpeditions();
     }
 
@@ -1175,7 +975,7 @@ public partial class Game : MonoBehaviour
     IEnumerator SpawnGroup(Vector2Int cell, NightGroupPlan plan)
     {
         var gp = new GameObject(plan.name).AddComponent<EnemyGroup>();
-        gp.minSize = Mathf.Min(groupMinSize, plan.members.Length);
+        gp.minSize = plan.fixedOpening ? Mathf.Min(groupMinSize, plan.members.Length) : plan.members.Length;
         gp.loneWolfChance = plan.fixedOpening ? 0f : loneWolfChance;
         gp.tacticalGroupChance = tacticalGroupChance;
         gp.randomizeTactic = false;
@@ -1183,42 +983,45 @@ public partial class Game : MonoBehaviour
         gp.groupMergeRadius = groupMergeRadius;
         gp.expected = plan.members.Length;
 
-        for (int i = 0; i < gp.expected; i++)
+        if (plan.fixedOpening)
         {
-            if (lost) yield break;
-            SpawnEnemy(gp, cell, plan.members[i]);
-            yield return new WaitForSeconds(spawnInterval);
+            for (int i = 0; i < gp.expected; i++)
+            {
+                if (lost) yield break;
+                SpawnEnemy(gp, cell, plan.members[i]);
+                yield return new WaitForSeconds(spawnInterval);
+            }
+            yield break;
+        }
+        // Use elapsed time so a large army can spawn multiple members per frame.
+        // Tiny WaitForSeconds delays otherwise stretch big groups over many frames.
+        float duration=Mathf.Min(Mathf.Max(0f,spawnInterval)*(gp.expected-1),
+            Mathf.Max(0f,nightDirector.maximumGroupSpawnDuration));
+        float elapsed=0f;
+        int spawned=0;
+        while(spawned<gp.expected && !lost)
+        {
+            int due=duration<=0f || elapsed>=duration ? gp.expected :
+                Mathf.Min(gp.expected,1+Mathf.FloorToInt(elapsed/duration*(gp.expected-1)));
+            while(spawned<due && !lost) SpawnEnemy(gp,cell,plan.members[spawned++]);
+            if(spawned<gp.expected) { yield return null; elapsed+=Time.deltaTime; }
         }
     }
 
     void SpawnEnemy(EnemyGroup gp, Vector2Int cell, NightEnemySpec spec)
     {
-        EnemyType type = spec.type;
-        Personality pers = spec.personality;
-        PrimitiveType shape = type == EnemyType.Tank ? PrimitiveType.Cylinder
-                            : (pers == Personality.Hunter ? PrimitiveType.Cube : PrimitiveType.Sphere);
-        var balance = spec.archetype != null ? spec.archetype.balance : type == EnemyType.Tank ? tankEnemy : commonEnemy;
-        Vector3 scale = balance.scale;
-        float y = scale.y * 0.5f;
-
         Vector3 pos = grid.CellToWorld(cell) + new Vector3(Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
-        pos.y = grid.transform.position.y + y;
+        var overrides = new EnemySpawnOverrides { balance=spec.balance,personality=spec.personality,bravery=spec.bravery,
+            temperament=spec.temperament,behavior=spec.behavior };
+        EnemyFactory.Spawn(spec.archetype,pos,grid,gp,null,overrides);
+    }
 
-        var go = Prim(shape, pos, scale, Color.red);
-        go.name = type + "_" + pers;
-        go.layer = LayerMask.NameToLayer("Enemies");
-        go.AddComponent<Health>();
-        var e = go.AddComponent<Enemy>();
-        e.Init(type, pers, spec.bravery, gp);
-        e.archetype = spec.archetype;
-        e.ApplyBalance(balance);
-        e.socialProfile.randomizeOnSpawn = false;
-        e.socialProfile.temperament = spec.temperament;
-        e.socialProfile.behavior = spec.behavior;
-        gp.Add(e);
-        gp.ApplySocialProfile(e);
-        SpawnedThisNight++;
-        RaiseGameplayEvent(GameplayEventType.EnemySpawned, go, 0f, $"Surgiu {type} ({pers})");
+    public void NotifyEnemySpawned(Enemy enemy)
+    {
+        if(enemy==null)return;
+        if(night && enemy.NavigationGrid==grid)SpawnedThisNight++;
+        RaiseGameplayEvent(GameplayEventType.EnemySpawned,enemy.gameObject,0f,
+            $"Surgiu {(enemy.archetype!=null?enemy.archetype.displayName:enemy.type.ToString())} ({enemy.personality})");
     }
 
     // ---------- HUD ----------
@@ -1268,7 +1071,7 @@ public partial class Game : MonoBehaviour
         if (IsOnExpedition || expeditionTransition) { DrawExpeditionUI(); return; }
         var st = new GUIStyle(GUI.skin.label) { fontSize = 16 };
         st.normal.textColor = Color.white;
-        bool showConstructionUI = !night && !combatCameraMode;
+        bool showConstructionUI = !night && !combatCameraMode && !IsPlayerRespawning;
         string activeModeName = night
             ? (combatCameraMode ? "Combate" : "Livre")
             : (combatCameraMode ? "Exploração" : "Construção");
@@ -1277,26 +1080,35 @@ public partial class Game : MonoBehaviour
             : (combatCameraMode ? "Construção" : "Exploração");
         string modeHint = $"Modo {activeModeName}  |  Tab: Modo {alternateModeName}";
 
-        if (sceneDrivenLayout && showConstructionUI) DrawStructureLabels();
+        if (showConstructionUI) DrawStructureLabels();
 
         float coreHp = core != null ? core.health.current : 0f;
         GUI.Label(new Rect(10, 8, 1400, 26),
             $"Dia {Day}   {(night ? $"NOITE • Leva {CurrentWave}/{TotalWaves}" : "MANHÃ")}   {DefaultResources.Wood.displayName}: {wallet.Wood}   {DefaultResources.Crystals.displayName}: {wallet.Crystals}   Core: {coreHp:0}   Jogador: {(PlayerVitals.I != null ? Mathf.Max(0f, PlayerVitals.I.Health.current) : 0f):0}   Abates: {killed}   Desertores: {deserted}", st);
 
-        GUI.Label(new Rect(10, 32, 1400, 26), night
+        GUI.Label(new Rect(10, 32, 1400, 26), IsPlayerRespawning
+            ? "Câmera livre • aguardando retorno | WASD/borda: mover | Roda: zoom | Botão do meio: arrastar"
+            : night
             ? modeHint + (combatCameraMode
                 ? "  |  WASD: mover jogador  |  E: interagir  |  Sobreviva à noite..."
                 : "  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar")
             : combatCameraMode
                 ? modeHint + "  |  WASD: mover jogador  |  E: interagir  |  Espaço: iniciar noite"
-            : sceneDrivenLayout
-                ? modeHint + "  |  Clique: selecionar / construir  |  Dir./0/Esc: mão vazia  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD: câmera"
-                : modeHint + "  |  Clique: selecionar / construir  |  Dir./0/Esc: mão vazia  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar", st);
+            : modeHint + "  |  Clique: selecionar / construir  |  Dir./0/Esc: mão vazia  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD: câmera", st);
         GUI.Label(new Rect(10, 56, 1400, 26), msg, st);
+        if (!IsPlayerRespawning && !lost)
+        {
+            var stock = new System.Text.StringBuilder("Estoque: ");
+            foreach (var item in wallet.Balances)
+                if (item.Key != null) stock.Append(item.Key.displayName).Append(": ").Append(item.Value).Append("   ");
+            var stockStyle = new GUIStyle(GUI.skin.label) { fontSize=12, wordWrap=true };
+            float stockWidth = showEventLog ? Screen.width-Mathf.Min(440f,Screen.width*0.45f)-30f : Screen.width-25f;
+            GUI.Label(new Rect(10,140,Mathf.Max(240f,stockWidth),34f),stock.ToString(),stockStyle);
+        }
         if (night)
             GUI.Label(new Rect(10, 82, 1100, 24),
                 $"Inimigos surgidos: {SpawnedThisNight}/{PlannedNightEnemies} • Mínimo do bloco: {CurrentNightMinimum} • Recorde de noite vencida no bloco: {(nightPopulation != null ? nightPopulation.PeakForBlock(round) : 0)}", st);
-        if (sceneDrivenLayout && showConstructionUI && buildArea != null)
+        if (showConstructionUI && buildArea != null)
         {
             GUI.Label(new Rect(10, 82, 510, 24), $"Área: {buildArea.Radius:0} m ({buildArea.expansionLevel}/{buildArea.maxExpansionLevel})  |  Verde: atual, amarelo: próxima expansão", st);
             if (!night && buildArea.CanExpand && GUI.Button(new Rect(10, 108, 230, 30),
@@ -1308,18 +1120,6 @@ public partial class Game : MonoBehaviour
             else if (!buildArea.CanExpand)
                 GUI.Label(new Rect(10, 108, 230, 24), "Área no tamanho máximo", st);
         }
-        string scenarioLabel = scenario != null ? scenario.displayName : "Inspector";
-        if (scenarioChangePending && scenarios.Count > 0)
-        {
-            var pending = scenarios.Find(s => s.name == selectedScenarioName);
-            if (pending != null) scenarioLabel = $"{scenarioLabel} -> {pending.displayName} (R para aplicar)";
-        }
-        if (!sceneDrivenLayout || showConstructionUI)
-        {
-            float scenarioY = sceneDrivenLayout ? 144f : 80f;
-            GUI.Label(new Rect(10, scenarioY, 1100, 22), $"Cenário: {scenarioLabel}   Mapa: {grid.width} x {grid.height}   Entradas: {spawns.Count}", st);
-        }
-
         if (showEventLog)
         {
             float rowHeight = 20f;
@@ -1329,7 +1129,7 @@ public partial class Game : MonoBehaviour
             GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.82f);
             GUI.DrawTexture(panel, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(panel.x + 8, panel.y + 4, panel.width - 16, rowHeight), "EVENTOS DE PLAYTEST [F3]", st);
+            GUI.Label(new Rect(panel.x + 8, panel.y + 4, panel.width - 16, rowHeight), "EVENTOS [F3]", st);
             for (int i = 0; i < recentEvents.Count; i++)
             {
                 var ev = recentEvents[recentEvents.Count - 1 - i];
@@ -1337,9 +1137,6 @@ public partial class Game : MonoBehaviour
                     $"{ev.time:0}s  {ev.details}", st);
             }
         }
-
-        if (!sceneDrivenLayout && scenario != null && !string.IsNullOrEmpty(scenario.instructions))
-            GUI.Label(new Rect(10, 104, 700, 38), scenario.instructions, st);
 
         if (showConstructionUI)
         {
@@ -1393,7 +1190,7 @@ public partial class Game : MonoBehaviour
             GUI.Label(new Rect(r.x + 22, r.y + 42, r.width - 26, 18), extra, smallSt);
         }
 
-        if (sceneDrivenLayout && !night)
+        if (!night)
         {
             var controlsStyle = new GUIStyle(GUI.skin.label) { fontSize = 12 };
             controlsStyle.normal.textColor = new Color(0.8f, 0.84f, 0.9f);
@@ -1404,11 +1201,14 @@ public partial class Game : MonoBehaviour
         }
 
         GUI.Label(new Rect(10, Screen.height - 54, 1600, 26),
-            "Esfera = Objective (ataca estruturas próximas)   Cubo = Hunter (prioriza torres)   Cilindro grande = Tank (prioriza o Núcleo; rompe muros/cercas conforme a rota)   Bolinha branca = líder", st);
+            "Objective: Núcleo | Saboteur: torres | PlayerHunter: jogador | Simple: alvos próximos | NpcHunter: reservado | Branco: líder", st);
         GUI.Label(new Rect(10, Screen.height - 30, 1600, 26),
             "Vermelho = Fanático   Laranja = Cobiçoso   Rosa = Covarde   Cinza = desertor", st);
 
         DrawInteractionUI();
+        if (IsPlayerRespawning && !lost)
+            GUI.Box(new Rect(Screen.width / 2f - 210f, Screen.height / 2f - 45f, 420f, 90f),
+                $"Você caiu — retorno em {Mathf.CeilToInt(PlayerRespawnRemaining)} s\nCâmera livre • WASD/borda: mover • Roda: zoom\nA vila continua lutando. Proteja o núcleo!");
         if (lost)
         {
             var big = new GUIStyle(GUI.skin.label) { fontSize = 36, alignment = TextAnchor.MiddleCenter };

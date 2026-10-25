@@ -10,43 +10,51 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49009e213cc64ab9b75433f86a9877d7, type: 3}
-  m_Name: Serraria
-  m_EditorClassIdentifier: Assembly-CSharp::VillageFacilityData
+  m_Name: "Serraria"
+  m_EditorClassIdentifier: "Assembly-CSharp::VillageFacilityData"
   displayName: "Serraria"
-  description: "Entrega recursos ao amanhecer após uma noite vencida."
+  description: "Produz ao amanhecer com pelo menos 2 trabalhadores. Mais trabalhadores ampliam a produção."
   icon: {fileID: 0}
   kind: 0
-  maxHealth: 120
+  maxHealth: 300
   levels:
-  - displayName: Nível 1
+  - displayName: "Nível 1"
     costs:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 5
-    minimumWorkers: 2
-    maximumWorkers: 8
-    extraWorkersPerBonus: 2
-    productionBonusPerGroup: 1
+      amount: 24
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 6
     productionPerNight:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 10
+      amount: 24
+    minimumWorkers: 2
+    maximumWorkers: 6
+    extraWorkersPerBonus: 2
+    productionBonusPerGroup: 2
     repairCosts:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 5
+      amount: 8
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 3
     npcCapacity: 0
-  - displayName: Nível 2
+  - displayName: "Nível 2"
     costs:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 10
-    - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
-      amount: 2
+      amount: 32
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 14
+    - resource: {fileID: 11400000, guid: 99d9d5d1ded24c1297f66aa0165a2b0e, type: 2}
+      amount: 6
+    productionPerNight:
+    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 36
     minimumWorkers: 2
     maximumWorkers: 8
     extraWorkersPerBonus: 2
-    productionBonusPerGroup: 1
-    productionPerNight:
-    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 20
+    productionBonusPerGroup: 2
     repairCosts:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 12
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
       amount: 5
     npcCapacity: 0

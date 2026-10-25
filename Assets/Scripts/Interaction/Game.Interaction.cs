@@ -15,8 +15,8 @@ public partial class Game
     Material selectionMaterial;
     int blockedAttackFrame = -1;
 
-    public bool IsConstructionMode => !night && !combatCameraMode && !lost && !IsOnExpedition && !expeditionTransition;
-    public bool IsExplorationMode => !night && combatCameraMode && !lost && !IsOnExpedition && !expeditionTransition;
+    public bool IsConstructionMode => !night && !combatCameraMode && !lost && !IsOnExpedition && !expeditionTransition && !IsPlayerRespawning;
+    public bool IsExplorationMode => !night && combatCameraMode && !lost && !IsOnExpedition && !expeditionTransition && !IsPlayerRespawning;
     public bool IsHandEmpty => Current == null;
     public bool InteractionOpen => inspectedTarget != null;
     public bool BlocksPlayerAttack => InteractionOpen || blockedAttackFrame == Time.frameCount ||
@@ -352,7 +352,7 @@ public partial class Game
     {
         if (!IsConstructionMode || point.occupied || !CanPlace(building, point.transform.position, out var matched) || matched != point) return false;
         if (!wallet.Spend(building.costs)) return false;
-        point.occupant = MakeStructureAt(building, point.transform.position, Quaternion.Euler(0f, buildRotation, 0f), false);
+        point.occupant = MakeStructureAt(building, point.transform.position, Quaternion.Euler(0f, buildRotation, 0f));
         point.occupied = true;
         grid.Recalc();
         return true;
@@ -383,15 +383,15 @@ public partial class Game
     {
         var next = structure.data.upgrade;
         if (!IsConstructionMode || next == null) return false;
-        Vector3 position = sceneDrivenLayout ? structure.transform.position : grid.CellToWorld(structure.cell);
-        if (sceneDrivenLayout && TryGetStructureBounds(structure.gameObject, out Bounds bounds)) position.y = bounds.min.y;
+        Vector3 position = structure.transform.position;
+        if (TryGetStructureBounds(structure.gameObject, out Bounds bounds)) position.y = bounds.min.y;
         float previousRotation = buildRotation;
         buildRotation = structure.transform.eulerAngles.y;
         bool placeable = CanPlace(next, position, out _, structure);
         buildRotation = previousRotation;
         if (!placeable || !BuildingInvestment.TryCombine(structure.Investment, next.costs, out var investment) ||
             !wallet.Spend(next.costs)) return false;
-        var replacement = MakeStructureAt(next, position, structure.transform.rotation, !sceneDrivenLayout);
+        var replacement = MakeStructureAt(next, position, structure.transform.rotation);
         replacement.placementRound = structure.placementRound;
         replacement.investedCosts = investment;
         foreach (var point in specialBuildPoints)
@@ -405,7 +405,6 @@ public partial class Game
 
     void OnDestroy()
     {
-        ReleaseExpeditionMaterials();
         if (selectionMaterial != null) Destroy(selectionMaterial);
     }
 }

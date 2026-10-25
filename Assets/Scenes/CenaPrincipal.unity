@@ -10319,11 +10319,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageBuildArea
   center: {fileID: 1051762590}
-  initialRadius: 284.1
+  initialRadius: 80
   radiusPerUpgrade: 10
   expansionLevel: 0
   maxExpansionLevel: 4
-  baseWoodCost: 30
+  baseWoodCost: 60
   woodCostPerLevel: 20
   baseCrystalsCost: 5
   crystalsCostPerLevel: 3
@@ -10413,7 +10413,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8000000000000000031
 Transform:
   m_ObjectHideFlags: 0
@@ -10460,7 +10460,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8000000000000000041
 Transform:
   m_ObjectHideFlags: 0
@@ -10554,7 +10554,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8000000000000000061
 Transform:
   m_ObjectHideFlags: 0
@@ -10630,63 +10630,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5282b4a48f425b4b93e5aeb35bc1964, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game
+  nightDirector: {fileID: 11400000, guid: f5e3b1ee69d24eb38621f6f73384d522, type: 2}
+  showInitialDayGuidance: 1
   litMaterial: {fileID: 0}
   lineMaterial: {fileID: 0}
-  startWood: 186
-  startCrystals: 6
-  dawnWood: 10
-  dawnCrystalsBase: 3
-  gridWidth: 21
-  gridHeight: 21
-  maxGridDimension: 41
   sceneMapDimension: 281
   gridCellSize: 2
   pathBreakCost: 10
-  spawnBuildClearance: 1
-  coreBuildClearance: 0
-  spawnEdges: -1
-  buildGridWidth: 0
-  buildGridHeight: 0
-  buildGridOffset: {x: 0, y: 0}
   cameraPanSpeed: 40
   cameraEdgeSize: 28
   combatCameraTarget: {fileID: 8100000000000000001}
-  interactionRange: 5
   combatCameraFollowSpeed: 8
   buildCameraZoomSpeed: 50
   buildCameraMinZoom: 15
   buildCameraMaxZoom: 100
   buildPlacementStep: 0.5
-  coreHealth: 300
+  coreHealth: 1200
   eventLogEntries: 8
   showEventLog: 1
   debugEnemyTargeting: 0
-  scenario: {fileID: 0}
-  commonEnemy:
-    knockbackResistance: 0.1
-    maxHealth: 25
-    speed: 3.2
-    damage: 4
-    attackCooldown: 1
-    attackRange: 3
-    tacticRadius: 16
-    scale: {x: 0.9, y: 0.9, z: 0.9}
-  tankEnemy:
-    knockbackResistance: 0.8
-    maxHealth: 140
-    speed: 2.2
-    damage: 14
-    attackCooldown: 1
-    attackRange: 3
-    tacticRadius: 100
-    scale: {x: 1.8, y: 0.9, z: 1.8}
-
   groupsPerWave: 3
-  nightDirector: {fileID: 11400000, guid: f5e3b1ee69d24eb38621f6f73384d522, type: 2}
   initialWaves: 3
-  waveInterval: 5
   nightsPerExtraWave: 2
   maxWaves: 5
+  waveInterval: 5
   baseCommonEnemies: 4
   commonsPerRound: 1
   tankEveryRounds: 2
@@ -10700,12 +10667,9 @@ MonoBehaviour:
   tacticalGroupChance: 0.7
   groupMergeRadius: 16
   varyFanaticBraveryForTesting: 1
-  round: 0
-  killed: 0
-  deserted: 0
-  night: 0
-  lost: 0
-  core: {fileID: 0}
+  nightsStarted: 0
+  interactionRange: 5
+  economy: {fileID: 11400000, guid: ef15a69b7efa4d9d870c812f82142d21, type: 2}
 --- !u!1 &8000000000000000080
 GameObject:
   m_ObjectHideFlags: 0
@@ -10722,7 +10686,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000081
 Transform:
   m_ObjectHideFlags: 0
@@ -10770,7 +10734,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000091
 Transform:
   m_ObjectHideFlags: 0
@@ -10818,7 +10782,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000101
 Transform:
   m_ObjectHideFlags: 0
@@ -10866,7 +10830,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8000000000000000111
 Transform:
   m_ObjectHideFlags: 0
@@ -10946,45 +10910,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8100000000000000000}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!136 &8100000000000000004
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8100000000000000000}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.45
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8100000000000000005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8100000000000000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a6b754ee3c94b0f98f438c9c1ab132e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 8
-  turnSpeed: 720
-  radius: 0.45
-  height: 2
 --- !u!23 &8100000000000000003
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -11034,6 +10959,45 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &8100000000000000004
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8100000000000000000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.45
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8100000000000000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8100000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a6b754ee3c94b0f98f438c9c1ab132e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  moveSpeed: 8
+  turnSpeed: 720
+  radius: 0.45
+  height: 2
 --- !u!114 &8100000000000000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11044,7 +11008,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6edfcd6a97464254ae55b2b91decc427, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
   attackRange: 4
   attackAngle: 100
@@ -11069,10 +11033,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7163ce16ecb4d118e99bf241079bfad, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerVitals
   maxHealth: 100
   damageInvulnerability: 0.5
+  villageRespawnDelay: 10
 --- !u!114 &8100000000000000008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11083,10 +11048,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34ab4985feb34014dbb7818dd882816b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
   max: 100
   current: 100
+  destroyOnDeath: 0
+  invulnerable: 0
 --- !u!114 &8100000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11097,7 +11064,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc5c0de2afd34647b13679b61078de01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
   flashColor: {r: 1, g: 0.15, b: 0.15, a: 1}
   duration: 0.2
@@ -11111,13 +11078,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: b9f821ef85954defbcabb77002445ddf, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11128,13 +11098,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 7f5bf05d68404d84a45c2a79dd54d8e6, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11145,13 +11118,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 03ddc68fa61a4012a4f0c66ee5939e12, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11162,13 +11138,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 5bbd777e117a4d9a96829995b2868120, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11179,13 +11158,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: cd8ff3a237f54e4bac1d2a1effe856f5, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11196,13 +11178,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 5d7da34334804b32b0fb3dde123c813f, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11213,13 +11198,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 27429ffdb5a9d1c40a424ae7601e7534, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11230,13 +11218,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 1d9908b09d6746ae9a5da4740a69c8e8, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11247,13 +11238,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 160cfb4118704e0a982978c5cbb9715f, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11264,13 +11258,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: 3db2e75e17944666a2d7e6e933eb18f6, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11281,13 +11278,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: e71d4be5c672463497de0d1f6a6678a4, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11298,13 +11298,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: cee5d231714042988e35fd790cefd36c, type: 2}
   startUnlocked: 0
   startingLevel: 1
   currentLevel: 0
   lastProductionRound: 0
+  broken: 0
+  ruinHeight: 0.2
+  ruinColor: {r: 0.32, g: 0.3, b: 0.27, a: 1}
 --- !u!114 &8200000000000000100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11315,7 +11318,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 321c67e7fffe4ac8a680d7b845325c88, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageProduction
 --- !u!114 &8300000000000000000
 MonoBehaviour:
@@ -11327,7 +11330,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11347,7 +11350,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11367,7 +11370,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: f299a19fcdda40c0884f55897ef8500c, type: 2}
   startUnlocked: 0
@@ -11387,7 +11390,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11407,7 +11410,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11427,7 +11430,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11447,7 +11450,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11467,7 +11470,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11487,7 +11490,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11507,7 +11510,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11527,7 +11530,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: afd7dfa8915a455bb198fd85e2910e67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageFacility
   data: {fileID: 11400000, guid: bd382a4d58744e22820e6140166e3281, type: 2}
   startUnlocked: 0
@@ -11547,7 +11550,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0780fba15ad34c5095cd887f5c8c069d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OcclusionOutline
   color: {r: 0.15, g: 0.9, b: 1, a: 1}
   width: 0.12
@@ -11678,7 +11681,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34ab4985feb34014dbb7818dd882816b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
   max: 50
   current: 50
@@ -11694,7 +11697,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8e4220f5ece4aeb88091dd37c33f7cf, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageNpc
   data: {fileID: 11400000, guid: 5ff0775481574a56838f2b180d431c5d, type: 2}
   residence: {fileID: 8300000000000000003}
@@ -11710,7 +11713,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc5c0de2afd34647b13679b61078de01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   duration: 0.15
@@ -11841,7 +11844,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34ab4985feb34014dbb7818dd882816b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
   max: 50
   current: 50
@@ -11857,7 +11860,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b8e4220f5ece4aeb88091dd37c33f7cf, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageNpc
   data: {fileID: 11400000, guid: 85cd9b7ae3e142a787a032fdbd1a57a6, type: 2}
   residence: {fileID: 8300000000000000002}
@@ -11873,7 +11876,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc5c0de2afd34647b13679b61078de01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   duration: 0.15
@@ -12002,8 +12005,57 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f873d10a1faf4fd2bfc138f821f569dc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExpeditionExit
+--- !u!1 &8600000000000000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8600000000000000001}
+  - component: {fileID: 8600000000000000002}
+  m_Layer: 0
+  m_Name: ExpeditionManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8600000000000000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8600000000000000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8600000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8600000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3711e510db44ee79ed21593f5c0d629, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ExpeditionManager
+  expeditions:
+  - destination: {fileID: 11400000, guid: 78b2a848bbe64ddda030b0bae707788a, type: 2}
+  unlockExpeditionsOnFirstDay: 1
+  defeatCargoLossPercent: 50
+  defeatReturnHealthPercent: 50
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -12028,3 +12080,4 @@ SceneRoots:
   - {fileID: 8400000000000000001}
   - {fileID: 8400000000000000021}
   - {fileID: 8500000000000000001}
+  - {fileID: 8600000000000000001}

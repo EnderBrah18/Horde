@@ -24,7 +24,24 @@ MonoBehaviour:
   cargoCapacity: 100
   explorationCameraZoom: 18
   resourceNodes:
-  - {fileID: 11400000, guid: 0930b2ed73e84522a2252d43f79b49e5, type: 2}
-  - {fileID: 11400000, guid: e26870d033cf42498f2f1bae63e21ac1, type: 2}
-  - {fileID: 11400000, guid: ddcf0499a8f249f782c52d097ffc9fc5, type: 2}
-  - {fileID: 11400000, guid: 41e864aabd2543b7b440120bc8baa7b6, type: 2}
+  - fileID: 11400000
+    guid: 0930b2ed73e84522a2252d43f79b49e5
+    type: 2
+  - fileID: 11400000
+    guid: e26870d033cf42498f2f1bae63e21ac1
+    type: 2
+  - fileID: 11400000
+    guid: ddcf0499a8f249f782c52d097ffc9fc5
+    type: 2
+  - fileID: 11400000
+    guid: 41e864aabd2543b7b440120bc8baa7b6
+    type: 2
+  - fileID: 11400000
+    guid: e3526dcae2ba47dea28badaf5923902a
+    type: 2
+  - fileID: 11400000
+    guid: 76fd642631264ac185056e740e869b8d
+    type: 2
+  - fileID: 11400000
+    guid: a81ea799e163416a9744a7a0457ac14d
+    type: 2

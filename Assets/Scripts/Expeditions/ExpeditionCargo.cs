@@ -9,6 +9,7 @@ public sealed class ExpeditionCargo
     public int Capacity { get; }
     public int Count { get; private set; }
     public bool Delivered { get; private set; }
+    bool defeatLossApplied;
 
     public ExpeditionCargo(int capacity) { Capacity = Math.Max(1, capacity); }
 
@@ -34,5 +35,20 @@ public sealed class ExpeditionCargo
         items.Clear();
         Count = 0;
         return true;
+    }
+
+    public int ApplyDefeatLoss(int percent)
+    {
+        if (Delivered || defeatLossApplied) return 0;
+        defeatLossApplied = true;
+        int before = Count;
+        foreach (var resource in new List<ResourceData>(items.Keys))
+        {
+            int retained = ExpeditionDefeatRules.RetainedAmount(items[resource],percent);
+            Count -= items[resource] - retained;
+            if (retained == 0) items.Remove(resource);
+            else items[resource] = retained;
+        }
+        return before - Count;
     }
 }

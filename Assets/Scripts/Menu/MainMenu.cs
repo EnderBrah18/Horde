@@ -15,7 +15,6 @@ public sealed class MainMenu : MonoBehaviour
         if (!Application.CanStreamedLevelBeLoaded(gameplayScene))
         { message = "A cena da vila não está incluída na build."; yield break; }
         loading = true;
-        Game.PrepareNewRun();
         var operation = SceneManager.LoadSceneAsync(gameplayScene, LoadSceneMode.Single);
         if (operation != null) yield return operation;
         else { loading = false; message = "Não foi possível iniciar a partida."; }

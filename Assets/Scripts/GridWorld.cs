@@ -17,7 +17,7 @@ public class GridWorld : MonoBehaviour
     Structure[,] cells;
     bool[,] hardBlocked;
     int[,] dist;
-    int[,] tankDist;
+    readonly Dictionary<Vector2Int, int[,]> objectiveDistances = new Dictionary<Vector2Int, int[,]>();
     readonly Dictionary<Vector2Int, int[,]> targetDistances = new Dictionary<Vector2Int, int[,]>();
     readonly Dictionary<Vector2Int, int[,]> openTargetDistances = new Dictionary<Vector2Int, int[,]>();
     Vector2Int? movingTargetCell;
@@ -67,12 +67,12 @@ public class GridWorld : MonoBehaviour
         targetDistances.Clear();
         openTargetDistances.Clear();
         movingTargetCell = null;
-        tankDist = null;
+        objectiveDistances.Clear();
     }
 
     public bool InBounds(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < width && c.y < height;
     public bool IsHardBlocked(Vector2Int c) => InBounds(c) && hardBlocked[c.x, c.y];
-    public bool IsTankBreakableWall(Structure structure)
+    public bool IsBreakableFence(Structure structure)
     {
         return structure != null && structure.CanBeAttacked && structure.kind == StructureKind.Wall &&
                structure.gameObject.tag == "Cerca";
@@ -322,15 +322,18 @@ public class GridWorld : MonoBehaviour
         return FlowDir(wp, dist, false, true, CellToWorld(CoreCell));
     }
 
-    // Tanks keep the Core as their strategic target. The weighted flow field
-    // chooses whether a wall is cheaper to break than to route around.
-    public Vector3 FlowDirForTank(Vector3 wp)
+    // Objective personality uses the former Tank route, regardless of physical type.
+    public Vector3 FlowDirForObjective(Vector3 wp, Vector2Int target)
     {
-        if (tankDist == null) tankDist = CalculateDistances(CoreCell, true);
-        return FlowDir(wp, tankDist, true, true, CellToWorld(CoreCell));
+        if (!objectiveDistances.TryGetValue(target, out var distances))
+        {
+            distances = CalculateDistances(target);
+            objectiveDistances[target] = distances;
+        }
+        return FlowDir(wp, distances, true, true, CellToWorld(target));
     }
 
-    // Hunters use the same weighted routing toward a tower instead of walking in a straight line through walls.
+    // Saboteurs use the same weighted routing toward a tower instead of walking in a straight line through walls.
     public Vector3 FlowDir(Vector3 wp, Vector2Int target)
     {
         return FlowDir(wp, target, true);
@@ -342,7 +345,7 @@ public class GridWorld : MonoBehaviour
         if (!InBounds(target)) return DirectionTo(wp, targetWorld);
         if (!targetDistances.TryGetValue(target, out var targetDist))
         {
-            targetDist = CalculateDistances(target, false);
+            targetDist = CalculateDistances(target);
             targetDistances[target] = targetDist;
         }
         return FlowDir(wp, targetDist, false, allowLocalDetour, targetWorld);
@@ -371,9 +374,9 @@ public class GridWorld : MonoBehaviour
         // if none makes progress, the existing flow can still choose to attack it.
         if (pick != c && cells[pick.x, pick.y] != null)
         {
-            bool selectedWallForTank = preferBreakingWalls &&
-                IsTankBreakableWall(cells[pick.x, pick.y]);
-            if (!selectedWallForTank && allowLocalDetour)
+            bool selectedBreakableFence = preferBreakingWalls &&
+                IsBreakableFence(cells[pick.x, pick.y]);
+            if (!selectedBreakableFence && allowLocalDetour)
             {
                 Vector2Int detour = FindLocalOpenDetour(c, distances,
                     Mathf.Max(1, Mathf.CeilToInt(LocalDetourRadius / cellSize)));
@@ -446,7 +449,7 @@ public class GridWorld : MonoBehaviour
         return firstStep[bestGoal.x - minX, bestGoal.y - minY];
     }
 
-    int[,] CalculateDistances(Vector2Int start, bool wallsOnly)
+    int[,] CalculateDistances(Vector2Int start)
     {
         var distances = new int[width, height];
         for (int x = 0; x < width; x++)
@@ -469,12 +472,6 @@ public class GridWorld : MonoBehaviour
                 var n = c + d;
                 if (!InBounds(n) || hardBlocked[n.x, n.y] ||
                     (hardBlocked[c.x, c.y] && c != start)) continue;
-                Structure nextStructure = cells[n.x, n.y];
-                if (wallsOnly && n != start && nextStructure != null && !IsTankBreakableWall(nextStructure))
-                    continue;
-                Structure structure = cells[c.x, c.y];
-                if (wallsOnly && c != start && structure != null && !IsTankBreakableWall(structure))
-                    continue;
                 int nd = node.cost + 1 + (cells[c.x, c.y] != null ? structureCost : 0);
                 if (nd >= distances[n.x, n.y]) continue;
                 distances[n.x, n.y] = nd;

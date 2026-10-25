@@ -2,18 +2,31 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum EnemyType { Common, Tank }
-public enum Personality { Objective, Hunter }   // Objective = ObjectiveRooted
+public enum Personality { Objective = 0, Saboteur = 1, PlayerHunter = 2, NpcHunter = 3, Simple = 4 }
 public enum EState { Rally, March, Flee }
 
+[DisallowMultipleComponent, RequireComponent(typeof(Health))]
 public class Enemy : MonoBehaviour
 {
     public static readonly List<Enemy> All = new List<Enemy>();
 
     public EnemyType type;
     public EnemyArchetypeData archetype;
+    public bool targetPlayerWithoutCore=true;
+    public GridWorld NavigationGrid { get; private set; }
+    bool initialized;
+    bool contextHasCore;
+    bool PrefersPlayer => EnemyTargetRules.PreferPlayer(personality,contextHasCore,targetPlayerWithoutCore);
     public Personality personality;
+    [Header("PlayerHunter: perseguição")]
+    public PlayerHuntStyle playerHuntStyle=PlayerHuntStyle.Stalker;
+    [Min(0f)] public float playerHuntGraceDuration=5f;
+    [Min(0.1f)] public float playerHuntInvestigationDuration=20f;
+    readonly PlayerHuntMemory<Vector3> playerHunt = new PlayerHuntMemory<Vector3>();
+    public PlayerHuntPhase HuntPhase => playerHunt.Phase;
     public float braveza = 1f;
     public EnemyGroup group;
+    public EnemyPositioning Positioning { get; private set; }
     public bool AvailableForRecruitment { get; private set; }
     [Min(1f)] public float deserterDespawnDelay = 30f;
     float deserterIdleTime;
@@ -34,6 +47,7 @@ public class Enemy : MonoBehaviour
     [Min(0f)] public float obstacleClearance = 0.6f;
     float NavigationRadius => Mathf.Max(0.15f,
         Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.45f) + obstacleClearance;
+    public float NavigationClearance => NavigationRadius;
     Vector3 smoothedMotion;
     Vector3 lastDetourDirection;
     float detourPreferenceUntil;
@@ -59,7 +73,6 @@ public class Enemy : MonoBehaviour
     Structure damagedByTarget;
     Structure selectedTarget;
     PlayerVitals selectedPlayer;
-    float playerRetaliationUntil;
     string lastTargetReason;
     bool targetDebugPending;
     bool movementDebugPending;
@@ -74,6 +87,7 @@ public class Enemy : MonoBehaviour
     void OnEnable() { All.Add(this); }
     void OnDisable()
     {
+        TankCoverFormation.RemoveEnemy(this);
         All.Remove(this);
         if (hp != null)
         {
@@ -84,9 +98,15 @@ public class Enemy : MonoBehaviour
 
     public void Init(EnemyType t, Personality p, float b, EnemyGroup g)
     {
+        initialized=true;
+        NavigationGrid=GridWorld.I;
         if (GetComponent<DamageFlash>() == null) gameObject.AddComponent<DamageFlash>();
         if (GetComponent<OcclusionOutline>() == null) gameObject.AddComponent<OcclusionOutline>();
         type = t; personality = p; braveza = b; group = g;
+        playerHunt.Reset();
+        selectedTarget = null;
+        selectedPlayer = null;
+        targetDecisionTimer = 0f;
         socialProfile = GetComponent<EnemySocialProfile>();
         if (socialProfile == null) socialProfile = gameObject.AddComponent<EnemySocialProfile>();
         socialProfile.RollOnSpawn();
@@ -114,7 +134,48 @@ public class Enemy : MonoBehaviour
         else if (b >= 0.99f) c = new Color(0.9f, 0.1f, 0.1f);      // Fanático
         else if (b >= 0.4f) c = new Color(1f, 0.55f, 0f);           // Cobiçoso
         else c = new Color(1f, 0.6f, 0.85f);                        // Covarde
-        GetComponent<Renderer>().material.color = c;
+        SetBodyColor(c);
+    }
+
+    void Start()
+    {
+        if(!initialized && archetype!=null && GridWorld.I!=null && GridWorld.I.gameObject.scene==gameObject.scene)
+            InitializeFromDefinition(archetype,GridWorld.I,group,null);
+    }
+
+    public void InitializeFromDefinition(EnemyArchetypeData definition,GridWorld navigation,EnemyGroup assignedGroup=null,EnemySpawnOverrides overrides=null)
+    {
+        if(definition==null || definition.balance==null) return;
+        bool firstInitialization=!initialized;
+        if(group!=null && group!=assignedGroup)group.Remove(this);
+        archetype=definition;
+        Init(definition.runtimeType,overrides?.personality??definition.personality,overrides?.bravery??definition.bravery,assignedGroup);
+        NavigationGrid=navigation;
+        Positioning = GetComponent<EnemyPositioning>();
+        if (Positioning == null) Positioning = gameObject.AddComponent<EnemyPositioning>();
+        Positioning.Configure(this, definition);
+        targetPlayerWithoutCore=definition.targetPlayerWithoutCore;
+        playerHuntStyle=definition.playerHuntStyle;
+        playerHuntGraceDuration=Mathf.Max(0f,definition.playerHuntGraceDuration);
+        playerHuntInvestigationDuration=Mathf.Max(0.1f,definition.playerHuntInvestigationDuration);
+        ApplyBalance(overrides?.balance??definition.balance);
+        braveza=Mathf.Clamp(overrides?.bravery??definition.bravery,0f,1.2f);
+        socialProfile.randomizeOnSpawn=definition.randomizeSocialOnSpawn;
+        if(definition.randomizeSocialOnSpawn) socialProfile.RollOnSpawn();
+        else
+        { socialProfile.temperament=definition.temperament; socialProfile.behavior=definition.behavior; }
+        if(overrides?.temperament!=null)socialProfile.temperament=overrides.temperament.Value;
+        if(overrides?.behavior!=null)socialProfile.behavior=overrides.behavior.Value;
+        if(assignedGroup==null)state=EState.March;
+        else if(!assignedGroup.members.Contains(this))
+        { assignedGroup.Add(this); assignedGroup.ApplySocialProfile(this); }
+        if(firstInitialization && Game.I!=null)Game.I.NotifyEnemySpawned(this);
+    }
+
+    void SetBodyColor(Color color)
+    {
+        var renderer=GetComponentInChildren<Renderer>();
+        if(renderer!=null)renderer.material.color=color;
     }
 
     public void ApplyBalance(EnemyBalanceSettings balance)
@@ -144,10 +205,19 @@ public class Enemy : MonoBehaviour
         SetSocialRole(EnemySocialRole.LoneWolf);
     }
 
+    public void LeaveGroupForPositioning()
+    {
+        if (group == null || group.Leader == this) return;
+        group.ReleaseForPositioning(this);
+        group = null;
+        AvailableForRecruitment = false;
+        SetSocialRole(EnemySocialRole.Soldier);
+    }
+
     void OnDied(Health h)
     {
         if (group != null) group.Remove(this);
-        Game.I.killed++;
+        if(Game.I!=null)Game.I.killed++;
     }
 
     public void LeaveSeparatedGroup()
@@ -186,13 +256,18 @@ public class Enemy : MonoBehaviour
         if (g != null) g.Remove(this);
         state = EState.Flee;
         deserterIdleTime = 0f;
-        GetComponent<Renderer>().material.color = Color.gray;
-        Game.I.deserted++;
+        SetBodyColor(Color.gray);
+        if(Game.I!=null)Game.I.deserted++;
     }
 
     void Update()
     {
-        if (Game.I == null || Game.I.lost) return;
+        if(!initialized)
+        {
+            if(archetype==null || GridWorld.I==null || GridWorld.I.gameObject.scene!=gameObject.scene) return;
+            InitializeFromDefinition(archetype,GridWorld.I,group,null);
+        }
+        if ((Game.I != null && Game.I.lost) || GridWorld.I==null || (NavigationGrid!=null && GridWorld.I!=NavigationGrid)) return;
         float dt = Time.deltaTime;
         if (state == EState.Flee)
         {
@@ -214,8 +289,11 @@ public class Enemy : MonoBehaviour
                 damagedByTarget = null;
         }
 
+        UpdatePlayerHunt();
+
         if (knockbackRemaining > 0f)
         {
+            TankCoverFormation.Release(this);
             UpdateKnockback(dt);
             return;
         }
@@ -230,9 +308,12 @@ public class Enemy : MonoBehaviour
                 break;
             case EState.March:
                 dir = MarchDir();
-                if (group != null && dir.sqrMagnitude > 0.0001f)
+                bool attacking = dir.sqrMagnitude <= 0.0001f && (selectedPlayer != null || selectedTarget != null);
+                bool positioned = Positioning != null && Positioning.TrySteer(dir, attacking, out dir);
+                if (!positioned && group != null && dir.sqrMagnitude > 0.0001f)
                     dir = group.TravelSteering(this, dir,
-                        selectedPlayer != null || (selectedTarget != null && selectedTarget.kind != StructureKind.Core));
+                        selectedPlayer != null || (personality == Personality.PlayerHunter && playerHunt.HasDestination) ||
+                        (selectedTarget != null && selectedTarget.kind != StructureKind.Core));
                 // Keep attackers stationary while they are in range of their target.
                 if (dir.sqrMagnitude > 0.0001f)
                 {
@@ -247,6 +328,7 @@ public class Enemy : MonoBehaviour
                 dir = FleeDir(); mult = 1.2f;
                 break;
         }
+        TankCoverFormation.EndSteering(this);
         if (state != EState.March) dir += Separation() * 1.5f;
 
         if (state == EState.March && recoveryTimer > 0f && dir.sqrMagnitude > 0.0001f)
@@ -397,12 +479,38 @@ public class Enemy : MonoBehaviour
     {
         Vector3 pos = transform.position;
         hasDebugApproach = false;
+        if (personality == Personality.PlayerHunter && playerHunt.HasDestination)
+        {
+            selectedTarget = null;
+            bool investigating = playerHunt.Phase == PlayerHuntPhase.Investigating;
+            selectedPlayer = investigating ? null : PlayerVitals.I;
+            lastTargetReason = "PlayerHunter: " + playerHunt.Phase;
+            Vector3 destination = playerHunt.Destination;
+            if (investigating && FlatDistance(pos, destination) <= Mathf.Max(0.5f, NavigationGrid.cellSize * 0.5f))
+            {
+                playerHunt.CompleteInvestigation();
+                targetDecisionTimer = 0f;
+            }
+            else
+            {
+                if (!investigating && selectedPlayer != null && selectedPlayer.IsAlive &&
+                    FlatDistance(pos, destination) <= attackRange && ClearPlayerAttack(pos, destination))
+                {
+                    if (atkTimer <= 0f) { atkTimer = attackCooldown; selectedPlayer.TakeDamage(damage, gameObject); }
+                    return Vector3.zero;
+                }
+                var cell = NavigationGrid.WorldToCell(destination);
+                if (NavigationGrid.TryMovingTargetRoute(pos, cell, out Vector3 direction, float.PositiveInfinity, NavigationRadius)) return direction;
+                return NavigationGrid.FlowDir(pos, cell);
+            }
+        }
         if (targetDecisionTimer <= 0f || (selectedTarget != null && !IsValidTarget(selectedTarget)))
         {
             Structure previousTarget = selectedTarget;
+            contextHasCore=FindCoreTarget()!=null;
             string previousReason = lastTargetReason;
             selectedTarget = PickTarget(pos);
-            selectedPlayer = PickPlayerTarget(pos, selectedTarget);
+            selectedPlayer = PickPlayerTarget(pos);
             targetDecisionTimer = TargetDecisionInterval;
             if (DebugTargetingEnabled() &&
                 (targetDebugPending || previousTarget != selectedTarget || previousReason != lastTargetReason))
@@ -428,8 +536,12 @@ public class Enemy : MonoBehaviour
                 return Vector3.zero;
             }
             Vector2Int playerCell = GridWorld.I.WorldToCell(destination);
-            if (GridWorld.I.TryMovingTargetRoute(pos, playerCell, out Vector3 pursuit, tacticRadius, NavigationRadius))
+            if (GridWorld.I.TryMovingTargetRoute(pos, playerCell, out Vector3 pursuit,
+                PrefersPlayer?float.PositiveInfinity:tacticRadius, NavigationRadius))
                 return pursuit;
+            // If structures seal the free route, keep the player as destination:
+            // weighted routing and Move can engage destructible obstacles.
+            if(PrefersPlayer)return GridWorld.I.FlowDir(pos,playerCell);
             // A blocked/unreachable player must not strand the enemy or cause
             // attacks through walls. Resume the existing structure objective.
             selectedPlayer = null;
@@ -444,8 +556,8 @@ public class Enemy : MonoBehaviour
             return Vector3.zero;
         }
 
-        if (type == EnemyType.Tank)
-            return GridWorld.I.FlowDirForTank(pos); // Tank mantém o Núcleo como destino.
+        if ((personality == Personality.Objective || personality == Personality.PlayerHunter) && t != null && t.kind == StructureKind.Core)
+            return GridWorld.I.FlowDirForObjective(pos, GridWorld.I.WorldToCell(t.transform.position));
         if (t != null && t.kind != StructureKind.Core)
         {
             Vector2Int approachCell = GridWorld.I.AttackApproachCell(t, GetEntityId().GetHashCode(), attackRange);
@@ -457,23 +569,45 @@ public class Enemy : MonoBehaviour
                 ? openDirection : GridWorld.I.FlowDir(pos, approachCell);
             return debugRouteDirection;
         }
-        if (GridWorld.I.TryOpenRoute(pos, GridWorld.I.CoreCell, out Vector3 openCoreDirection, tacticRadius, NavigationRadius))
+        if (t == null || PrefersPlayer) return Vector3.zero;
+        Vector2Int coreCell = GridWorld.I.WorldToCell(t.transform.position);
+        if (GridWorld.I.TryOpenRoute(pos, coreCell, out Vector3 openCoreDirection, tacticRadius, NavigationRadius))
             return openCoreDirection;
-        return GridWorld.I.FlowDir(pos);
+        return GridWorld.I.FlowDir(pos, coreCell);
     }
 
-    PlayerVitals PickPlayerTarget(Vector3 position, Structure structureTarget)
+    PlayerVitals PickPlayerTarget(Vector3 position)
     {
+        if (!PrefersPlayer && personality != Personality.Simple) return null;
         var player = PlayerVitals.I;
-        if (player == null || !player.IsAlive || type == EnemyType.Tank) return null;
-        float distance = FlatDistance(position, player.transform.position);
-        if (distance > tacticRadius) return null;
-        // Retaliation is local; fleeing enemies and Tanks keep their existing roles.
-        if (Time.time < playerRetaliationUntil) return player;
-        if (personality == Personality.Hunter && IsValidTarget(structureTarget) && structureTarget.kind == StructureKind.Tower)
-            return null;
-        return !IsValidTarget(structureTarget) || distance <= FlatDistance(position, structureTarget.transform.position)
-            ? player : null;
+        if (player == null || !player.IsAlive || !NavigationGrid.InBounds(NavigationGrid.WorldToCell(player.transform.position))) return null;
+        // Dedicated hunters know their objective from spawn; fallback enemies still use perception.
+        if (!EnemyTargetRules.CanAcquirePlayer(personality, contextHasCore, targetPlayerWithoutCore,
+            FlatDistance(position, player.transform.position), tacticRadius)) return null;
+        if (personality == Personality.Simple && IsValidTarget(selectedTarget) &&
+            FlatDistance(position, selectedTarget.transform.position) < FlatDistance(position, player.transform.position)) return null;
+        return player;
+    }
+
+    void UpdatePlayerHunt()
+    {
+        if (personality != Personality.PlayerHunter || state != EState.March)
+        {
+            playerHunt.Reset();
+            return;
+        }
+        var player = PlayerVitals.I;
+        bool valid = player != null && player.IsAlive && NavigationGrid != null &&
+            NavigationGrid.InBounds(NavigationGrid.WorldToCell(player.transform.position));
+        Vector3 position = valid ? player.transform.position : Vector3.zero;
+        bool detected = valid && FlatDistance(transform.position, position) <= tacticRadius;
+        var previousPhase = playerHunt.Phase;
+        playerHunt.Update(valid, detected, position, Time.time, playerHuntGraceDuration, playerHuntInvestigationDuration, playerHuntStyle);
+        if (previousPhase != playerHunt.Phase)
+        {
+            selectedPlayer = null;
+            targetDecisionTimer = 0f;
+        }
     }
 
     bool ClearPlayerAttack(Vector3 from, Vector3 to)
@@ -488,110 +622,39 @@ public class Enemy : MonoBehaviour
         return true;
     }
 
-    // Prioridades pessoais vêm antes da sugestão do líder; inimigos comuns não têm um alvo global fixo.
+    // Strategic focus is defined by personality, never by physical enemy type.
     Structure PickTarget(Vector3 pos)
     {
-        // O Tank sempre prioriza o Núcleo; paredes só são atacadas quando o fluxo
-        // de rota decide que atravessá-las custa menos do que contorná-las.
-        if (type == EnemyType.Tank)
-        {
-            Structure coreTarget = FindCoreTarget();
-            if (coreTarget != null)
-            {
-                lastTargetReason = "Tank: prioridade fixa do Núcleo";
-                return coreTarget;
-            }
-        }
-
-        // Primeiro escolhe o alvo pessoal mais próximo dentro do raio tático.
-        // A memória de dano não deve fazer o inimigo abandonar uma ameaça local
-        // mais próxima para perseguir quem o atingiu anteriormente.
-        Structure personalTarget = PickPersonalPriorityTarget(pos);
-        if (personalTarget != null)
-        {
-            lastTargetReason = "alvo pessoal mais próximo no raio tático";
-            return personalTarget;
-        }
-
-        if (group != null && group.Leader != null && group.Leader != this && IsValidTarget(group.CommandTarget) &&
-            (group.CommandTarget.kind != StructureKind.Wall ||
-             (socialProfile != null && socialProfile.temperament == EnemyTemperament.Berserker)) &&
-            ShouldFollowLeaderOrder())
-        {
-            lastTargetReason = "ordem do líder (sem alvo pessoal local)";
-            return group.CommandTarget;
-        }
-
-        Structure perceivedTarget = FindNearestPerceivedTarget(pos);
-        if (perceivedTarget != null)
-        {
-            lastTargetReason = "estrutura percebida mais próxima";
-            return perceivedTarget;
-        }
-
-        // Ser atingido revela quem atacou, mas isso é apenas o último recurso:
-        // não deve desviar a horda do alvo local, da ordem do líder ou de outra
-        // estrutura percebida que ela já esteja priorizando.
-        if (IsKnownDamagedTarget(damagedByTarget))
-        {
-            lastTargetReason = "último recurso: estrutura que causou dano";
-            return damagedByTarget;
-        }
-
-        lastTargetReason = "nenhum alvo válido; segue fluxo do Núcleo";
-        return null;
-    }
-
-    Structure PickPersonalPriorityTarget(Vector3 pos)
-    {
-        bool berserker = socialProfile != null && socialProfile.temperament == EnemyTemperament.Berserker;
-
+        if (PrefersPlayer) { lastTargetReason = "personalidade/contexto: foco no jogador"; return null; }
         Structure best = null;
-        float bestDistance = float.MaxValue;
-        foreach (var structure in Structure.All)
+        float nearest = float.PositiveInfinity;
+        foreach (var candidate in Structure.All)
         {
-            if (!IsValidTarget(structure)) continue;
-            if (!IsPersonalPriorityCandidate(structure, berserker) || !CanPerceive(structure, pos)) continue;
-
-            float distance = FlatDistance(pos, structure.transform.position);
-            if (distance < bestDistance) { best = structure; bestDistance = distance; }
+            if (!IsValidTarget(candidate)) continue;
+            float distance = FlatDistance(pos, candidate.transform.position);
+            if (!EnemyTargetRules.CanSelectStructure(personality, candidate.kind, distance, tacticRadius)) continue;
+            if (distance < nearest) { best = candidate; nearest = distance; }
         }
+        if (personality == Personality.Simple)
+        {
+            lastTargetReason = best != null ? "Simple: alvo local mais próximo" : "Simple: avança para a vila sem alvo local";
+            return best != null ? best : FindCoreTarget();
+        }
+        lastTargetReason = best != null ? "foco rígido da personalidade: " + personality : "aguarda alvo da personalidade: " + personality;
         return best;
     }
 
-    bool IsPersonalPriorityCandidate(Structure structure, bool berserker)
+    bool IsPersonalPriorityCandidate(Structure structure)
     {
-        return structure != null &&
-               (structure.kind != StructureKind.Wall || berserker) &&
-               (berserker || personality == Personality.Objective || structure.kind == StructureKind.Tower);
+        return structure != null && EnemyTargetRules.CanSelectStructure(personality, structure.kind,
+            FlatDistance(transform.position, structure.transform.position), tacticRadius);
     }
 
-    bool ShouldFollowLeaderOrder()
+    bool IsValidTarget(Structure structure)
     {
-        if (socialProfile == null) return true;
-        return group.tactic == GroupTactic.Tactical ||
-               (socialProfile.temperament != EnemyTemperament.Wild &&
-                socialProfile.temperament != EnemyTemperament.Berserker &&
-                socialProfile.behavior != EnemySocialBehavior.Rebellious &&
-                (socialProfile.temperament == EnemyTemperament.Disciplined ||
-                 socialProfile.temperament == EnemyTemperament.Loyal ||
-                 socialProfile.behavior == EnemySocialBehavior.Passive));
-    }
-
-    bool CanPerceive(Structure structure, Vector3 pos)
-    {
-        if (structure == damagedByTarget && damagedTargetTimer > 0f) return true;
-        return FlatDistance(pos, structure.transform.position) <= tacticRadius;
-    }
-
-    bool IsKnownDamagedTarget(Structure structure)
-    {
-        return damagedTargetTimer > 0f && IsValidTarget(structure);
-    }
-
-    static bool IsValidTarget(Structure structure)
-    {
-        return structure != null && structure.CanBeAttacked;
+        var grid=NavigationGrid!=null?NavigationGrid:GridWorld.I;
+        return structure != null && grid!=null && EnemyTargetRules.IsLocalStructure(structure.CanBeAttacked,
+            structure.gameObject.scene==grid.gameObject.scene,grid.InBounds(grid.WorldToCell(structure.transform.position)));
     }
 
     static float FlatDistance(Vector3 a, Vector3 b)
@@ -609,31 +672,8 @@ public class Enemy : MonoBehaviour
         return null;
     }
 
-    Structure FindNearestPerceivedTarget(Vector3 pos)
-    {
-        Structure best = null;
-        float bestDistance = float.MaxValue;
-        foreach (var structure in Structure.All)
-        {
-            if (!IsValidTarget(structure) || !CanPerceive(structure, pos)) continue;
-            if (structure.kind == StructureKind.Wall &&
-                (socialProfile == null || socialProfile.temperament != EnemyTemperament.Berserker)) continue;
-            float distance = FlatDistance(pos, structure.transform.position);
-            if (distance < bestDistance) { best = structure; bestDistance = distance; }
-        }
-        return best;
-    }
-
     void OnDamagedBy(Health health, float amount, GameObject source)
     {
-        if (amount > 0f && source != null && source.GetComponentInParent<PlayerVitals>() != null &&
-            state != EState.Flee && type != EnemyType.Tank)
-        {
-            playerRetaliationUntil = Time.time + damagedTargetMemory;
-            targetDecisionTimer = 0f;
-            state = EState.March;
-            return;
-        }
         if (state == EState.Flee && amount > 0f) deserterIdleTime = 0f;
         if (source == null)
         {
@@ -659,7 +699,7 @@ public class Enemy : MonoBehaviour
             float distance = FlatDistance(transform.position, sourceStructure.transform.position);
             Debug.Log($"[EnemyAI][Damage] {name} recebeu {amount:0.#} dano de {sourceStructure.name} " +
                       $"(dist={distance:0.0}, tacticRadius={tacticRadius:0.0}, currentTarget={TargetName(selectedTarget)}). " +
-                      "A origem será considerada apenas depois dos demais alvos.", this);
+                      "A personalidade mantém seu foco; dano não troca o alvo.", this);
         }
     }
 
@@ -671,14 +711,13 @@ public class Enemy : MonoBehaviour
     void LogTargetDecision(Vector3 position, Structure previousTarget, bool afterDamage)
     {
         var candidates = new List<Structure>();
-        bool berserker = socialProfile != null && socialProfile.temperament == EnemyTemperament.Berserker;
         foreach (var structure in Structure.All)
         {
             if (!IsValidTarget(structure)) continue;
             float distance = FlatDistance(position, structure.transform.position);
             bool inRadius = distance <= tacticRadius;
             bool isDamagedSource = structure == damagedByTarget && damagedTargetTimer > 0f;
-            if (!inRadius && !isDamagedSource) continue;
+            if (!inRadius && !isDamagedSource && !IsPersonalPriorityCandidate(structure)) continue;
             candidates.Add(structure);
         }
         candidates.Sort((a, b) => FlatDistance(position, a.transform.position)
@@ -690,9 +729,7 @@ public class Enemy : MonoBehaviour
             float distance = FlatDistance(position, structure.transform.position);
             bool inRadius = distance <= tacticRadius;
             bool isDamagedSource = structure == damagedByTarget && damagedTargetTimer > 0f;
-            bool personalPriority = type == EnemyType.Tank
-                ? structure.kind == StructureKind.Core
-                : IsPersonalPriorityCandidate(structure, berserker);
+            bool personalPriority = IsPersonalPriorityCandidate(structure);
             candidateDescriptions.Add($"{structure.name}[{structure.kind}]={distance:0.0}" +
                                      $"{(inRadius ? " raio" : " fora-raio")}{(personalPriority ? " prioridade" : "")}" +
                                      $"{(isDamagedSource ? " causou-dano" : "")}");
@@ -715,7 +752,8 @@ public class Enemy : MonoBehaviour
 
     Vector3 FleeDir()
     {
-        Vector3 d = transform.position - GridWorld.I.CellToWorld(GridWorld.I.CoreCell);
+        Vector3 origin=contextHasCore?GridWorld.I.CellToWorld(GridWorld.I.CoreCell):PlayerVitals.I!=null?PlayerVitals.I.transform.position:home;
+        Vector3 d = transform.position - origin;
         d.y = 0f;
         return d.normalized;
     }
@@ -791,7 +829,7 @@ public class Enemy : MonoBehaviour
         if (WouldHitStructure(pos, np, out Structure hitStructure))
         {
             // A colisão não deve fazer o inimigo contornar o próprio alvo.
-            // Isso era especialmente visível quando Hunter elegia uma torre:
+            // Isso era especialmente visível quando Saboteur elegia uma torre:
             // ele chegava ao collider e passava rente sem entrar no ataque.
             if (hitStructure != null && hitStructure == selectedTarget &&
                 FlatDistance(pos, hitStructure.transform.position) <= attackRange)
@@ -815,8 +853,7 @@ public class Enemy : MonoBehaviour
             {
                 // If no clear flank exists, attack the obstruction instead of
                 // repeatedly pushing into its collider.
-                if (type != EnemyType.Tank || g.IsTankBreakableWall(hitStructure))
-                    TryAttack(hitStructure);
+                TryAttack(hitStructure);
                 return;
             }
         }

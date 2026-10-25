@@ -10,23 +10,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4734506772ab4231b5ab5ec2844cc04c, type: 3}
-  m_Name: Escolta
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyGroupCompositionData
+  m_Name: "Escolta"
+  m_EditorClassIdentifier: "Assembly-CSharp::EnemyGroupCompositionData"
   displayName: "Escolta com Tank"
-  firstNight: 2
-  selectionWeight: 0.6
+  firstNight: 3
+  selectionWeight: 1
   minimumPopulationRatio: 1
   maximumPopulationRatio: 10
   members:
-  - archetype: {fileID: 11400000, guid: 8bf95dc5ef6e4bcb97c2a0beef65405a, type: 2}
-    minimumPerGroup: 1
-    weight: 1
   - archetype: {fileID: 11400000, guid: a27b6649254548a18691a001daa362b4, type: 2}
     minimumPerGroup: 1
     weight: 0
+  - archetype: {fileID: 11400000, guid: 32a08de49d344adf89af1fbce4f23155, type: 2}
+    minimumPerGroup: 2
+    weight: 1
+  - archetype: {fileID: 11400000, guid: 8bf95dc5ef6e4bcb97c2a0beef65405a, type: 2}
+    minimumPerGroup: 2
+    weight: 1
+  spawnCount: 5
   uniformTemperament: 1
   temperament: 1
   uniformBehavior: 1
   behavior: 0
+  uniformPersonality: 1
+  personality: 0
+  uniformBravery: 1
+  bravery: 1
   forceTactic: 1
   tactic: 1

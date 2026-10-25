@@ -45,6 +45,15 @@ static class ProgressionTests
         Check(!waves.CanFinishNight(1),"final survivors block dawn");
         Check(waves.CanFinishNight(0),"nine groups cleared across three waves allows dawn");
         Check(!waves.TryAdvance(0),"no fourth wave after configured final wave");
+        var varied=new NightWaveSequence(new[]{2,1,3});
+        varied.RecordGroupSpawned();
+        Check(!varied.TryAdvance(0),"partial variable wave cannot advance");
+        varied.RecordGroupSpawned();
+        Check(varied.TryAdvance(0) && varied.GroupsPerWave==1,"next wave uses its own batch count");
+        varied.RecordGroupSpawned();
+        Check(varied.TryAdvance(0) && varied.GroupsPerWave==3,"third wave restores its own batch count");
+        varied.RecordGroupSpawned(); varied.RecordGroupSpawned(); varied.RecordGroupSpawned();
+        Check(varied.CanFinishNight(0),"variable wave schedule finishes only after final batches");
         Check(VillageProgressionRules.CanTakePersonalExpedition(2,-1),"first personal departure available");
         Check(!VillageProgressionRules.CanTakePersonalExpedition(2,2),"second departure blocked on same day regardless of destination");
         Check(VillageProgressionRules.CanTakePersonalExpedition(3,2),"next morning restores daily personal departure");

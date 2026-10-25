@@ -6,9 +6,9 @@ using UnityEngine.SceneManagement;
 
 public partial class Game
 {
-    [Header("Descoberta de expedições")]
-    public ExpeditionData[] expeditionDestinations = new ExpeditionData[0];
+    [Header("Orientação inicial")]
     public bool showInitialDayGuidance = true;
+    ExpeditionManager expeditionManager;
     public bool IsOnExpedition { get; private set; }
     public bool ExpeditionTransition => expeditionTransition;
     bool expeditionTransition;
@@ -17,7 +17,7 @@ public partial class Game
     const string TooLateForExpedition = "Já está muito tarde. Você não pode sair em outra expedição hoje. Aguarde o próximo dia.";
     readonly HashSet<ExpeditionData> discoveredDestinations = new HashSet<ExpeditionData>();
     readonly List<ExpeditionExit> expeditionExits = new List<ExpeditionExit>();
-    readonly List<Material> expeditionMaterials = new List<Material>();
+    ExpeditionController expeditionController;
     ExpeditionData activeDestination;
     GridWorld villageGrid;
     Vector3 villagePlayerPosition;
@@ -27,8 +27,13 @@ public partial class Game
 
     void PrepareExpeditions()
     {
-        if (expeditionDestinations == null || expeditionDestinations.Length == 0)
-            expeditionDestinations = Resources.LoadAll<ExpeditionData>("Expeditions");
+        foreach (var candidate in FindObjectsByType<ExpeditionManager>())
+            if (candidate.gameObject.scene == gameObject.scene) expeditionManager = candidate;
+        if (expeditionManager == null)
+        {
+            Debug.LogError("Cadastre as expedições em um ExpeditionManager na cena da vila.", this);
+            return;
+        }
         expeditionExits.AddRange(FindObjectsByType<ExpeditionExit>());
         if (expeditionExits.Count == 0)
         {
@@ -41,12 +46,15 @@ public partial class Game
             Say("Dia 1: explore a vila, restaure casas e locais de trabalho, recrute moradores e prepare as defesas. Espaço inicia a noite.", 16f);
     }
 
-    public bool IsDestinationDiscovered(ExpeditionData destination) => destination != null && discoveredDestinations.Contains(destination);
+    public bool IsDestinationDiscovered(ExpeditionData destination) => expeditionManager != null &&
+        expeditionManager.Find(destination) != null &&
+        (discoveredDestinations.Contains(destination) ||
+         (expeditionManager.unlockExpeditionsOnFirstDay && Day == 1 && !night && !lost));
 
     void DiscoverExpeditions()
     {
-        if (night || lost || expeditionDestinations == null) return;
-        foreach (var destination in expeditionDestinations)
+        if (night || lost || expeditionManager == null) return;
+        foreach (var destination in expeditionManager.Destinations)
         {
             if (destination == null || !VillageProgressionRules.CanDiscover(Day, destination.discoveryDay,
                 night, lost, discoveredDestinations.Contains(destination))) continue;
@@ -64,7 +72,7 @@ public partial class Game
         if (PersonalExpeditionUsedToday)
             GUILayout.Label(TooLateForExpedition, new GUIStyle(GUI.skin.label) { wordWrap = true, fontStyle = FontStyle.Bold });
         bool any = false;
-        foreach (var destination in expeditionDestinations)
+        foreach (var destination in expeditionManager != null ? expeditionManager.Destinations : new ExpeditionData[0])
         {
             if (!IsDestinationDiscovered(destination)) continue;
             any = true;
@@ -109,33 +117,47 @@ public partial class Game
         expeditionScene = SceneManager.GetSceneByName(destination.sceneName);
         if (!expeditionScene.isLoaded) { expeditionTransition = false; Say("A cena de expedição não foi carregada."); yield break; }
         activeDestination = destination;
-        var root = new GameObject("ExpeditionRuntime");
-        SceneManager.MoveGameObjectToScene(root, expeditionScene);
-        root.transform.position = new Vector3(10000f, villageGrid.transform.position.y, 10000f);
-        grid = root.AddComponent<GridWorld>();
-        int size = Mathf.Clamp(destination.testRegionSize, 11, 101);
-        grid.Configure(size, size, 2f, 0);
+        expeditionController = null;
+        int controllerCount = 0;
+        foreach (var sceneRoot in expeditionScene.GetRootGameObjects())
+            foreach (var candidate in sceneRoot.GetComponentsInChildren<ExpeditionController>(true))
+                if (candidate.isActiveAndEnabled) { expeditionController = candidate; controllerCount++; }
+        bool prepared = false;
+        try
+        {
+            if (controllerCount != 1) throw new System.InvalidOperationException("A cena precisa de exatamente um ExpeditionController ativo.");
+            expeditionController.Initialize(destination, litMaterial, expeditionVisit);
+            prepared = true;
+        }
+        catch (System.Exception exception) { Debug.LogException(exception); }
+        if (!prepared)
+        {
+            grid = villageGrid;
+            GridWorld.I = villageGrid;
+            var failedUnload = SceneManager.UnloadSceneAsync(expeditionScene);
+            if (failedUnload != null) yield return failedUnload;
+            expeditionController = null;
+            activeDestination = null;
+            expeditionTransition = false;
+            Say("Não foi possível preparar a região. Confira o ExpeditionController da cena.");
+            yield break;
+        }
+        expeditionVisit++;
+        grid = expeditionController.Grid;
         GridWorld.I = grid;
-        var ground = Prim(PrimitiveType.Cube, root.transform.position - Vector3.up * 0.25f,
-            new Vector3(size * 2f, 0.5f, size * 2f), destination.groundColor);
-        ground.name = "ExpeditionTestGround";
-        expeditionMaterials.Add(ground.GetComponent<Renderer>().sharedMaterial);
-        ground.transform.SetParent(root.transform, true);
-        extractionPosition = root.transform.position;
-        var marker = Prim(PrimitiveType.Cylinder, extractionPosition + Vector3.right * 3f + Vector3.up * 0.3f,
-            new Vector3(1f, 0.3f, 1f), Color.yellow);
-        marker.name = "Extracao_Retorno";
-        expeditionMaterials.Add(marker.GetComponent<Renderer>().sharedMaterial);
-        marker.transform.SetParent(root.transform, true);
-        extractionPosition = marker.transform.position;
-        GenerateExpedition(root.transform, size);
-        player.position = root.transform.position + Vector3.up;
+        expeditionNodes.Clear();
+        expeditionNodes.AddRange(expeditionController.Nodes);
+        expeditionCargo = expeditionController.Cargo;
+        nearbyResource = null;
+        collectionMessage = "";
+        extractionPosition = expeditionController.ExtractionPosition;
+        player.SetPositionAndRotation(expeditionController.PlayerPosition, expeditionController.PlayerRotation);
         combatCameraMode = true;
         IsOnExpedition = true;
         // Consume the player's daily departure only after the trip is ready.
         lastPersonalExpeditionDay = Day;
         expeditionTransition = false;
-        if (Camera.main != null) SetCameraZoom(Camera.main, Mathf.Clamp(destination.explorationCameraZoom, 5f, 60f));
+        if (Camera.main != null) SetCameraZoom(Camera.main, expeditionController.CameraZoom);
         CenterCameraOn(player.position);
         RaiseGameplayEvent(GameplayEventType.ExpeditionDeparted, null, Day, "Viagem iniciada: " + destination.displayName);
     }
@@ -155,33 +177,67 @@ public partial class Game
         return delta.sqrMagnitude <= interactionRange * interactionRange;
     }
 
-    IEnumerator ReturnFromExpedition()
+    readonly List<ExpeditionCargo> deferredCargo = new List<ExpeditionCargo>();
+    float nextDeferredCargoAttempt;
+
+    bool TryDeliverCargo(ExpeditionCargo cargo)
     {
-        if (!IsOnExpedition || expeditionTransition || !NearExtraction()) yield break;
-        bool delivered;
-        try { delivered = expeditionCargo != null && expeditionCargo.TryDeliver(wallet); }
+        if (cargo == null) return true;
+        try { return cargo.Delivered || cargo.TryDeliver(wallet); }
         catch (System.Exception exception)
         {
             Debug.LogException(exception);
-            delivered = expeditionCargo != null && expeditionCargo.Delivered;
+            return cargo.Delivered;
         }
-        if (!delivered) { collectionMessage = "Não foi possível entregar a carga. Confira o limite de recursos da vila."; yield break; }
+    }
+
+    void FlushDeferredCargo()
+    {
+        if (deferredCargo.Count == 0 || expeditionTransition || Time.time < nextDeferredCargoAttempt) return;
+        nextDeferredCargoAttempt = Time.time + 1f;
+        for (int i = deferredCargo.Count - 1; i >= 0; i--)
+            if (TryDeliverCargo(deferredCargo[i])) deferredCargo.RemoveAt(i);
+    }
+
+    IEnumerator ReturnFromExpedition(bool defeated = false)
+    {
+        if (!IsOnExpedition || expeditionTransition || (!defeated && !NearExtraction())) yield break;
+        var vitals = PlayerVitals.I;
+        if (vitals == null) yield break;
         expeditionTransition = true;
-        var player = PlayerVitals.I.transform;
+        int lostUnits = 0;
+        if (defeated && expeditionCargo != null)
+            lostUnits = expeditionCargo.ApplyDefeatLoss(expeditionManager != null ? expeditionManager.defeatCargoLossPercent : 50);
+        bool delivered = TryDeliverCargo(expeditionCargo);
+        if (!delivered && !defeated)
+        {
+            expeditionTransition = false;
+            collectionMessage = "Não foi possível entregar a carga. Confira o limite de recursos da vila.";
+            yield break;
+        }
+        // Failure to credit an overflowing wallet must never strand a defeated player.
+        // Preserve the remainder and retry after returning; never apply the loss twice.
+        if (!delivered && expeditionCargo != null) deferredCargo.Add(expeditionCargo);
+        var player = vitals.transform;
         grid = villageGrid;
         GridWorld.I = villageGrid;
         player.SetPositionAndRotation(villagePlayerPosition, villagePlayerRotation);
+        if (defeated) vitals.RecoverFromExpeditionDefeat(expeditionManager != null ? expeditionManager.defeatReturnHealthPercent : 50);
         if (Camera.main != null) SetCameraZoom(Camera.main, villageCameraZoom);
         CenterCameraOn(player.position);
-        ReleaseExpeditionMaterials();
         var unload = SceneManager.UnloadSceneAsync(expeditionScene);
         if (unload != null) yield return unload;
         IsOnExpedition = false;
         expeditionTransition = false;
         activeDestination = null;
+        expeditionController = null;
         expeditionNodes.Clear(); nearbyResource = null; expeditionCargo = null;
-        RaiseGameplayEvent(GameplayEventType.ExpeditionReturned, null, Day, "Retorno à vila. A manhã continua.");
-        Say("Você voltou à vila e entregou a carga. O dia e o progresso foram preservados.", 8f);
+        string notice = defeated
+            ? $"Você foi derrotado na expedição e voltou à vila com {vitals.Health.current:0.#}/{vitals.Health.max:0.#} de vida. Perdeu {lostUnits} recursos da carga. " +
+                (delivered ? "O restante foi entregue." : "O restante está aguardando espaço no saldo da vila.") + " A viagem do dia foi consumida."
+            : "Você voltou à vila e entregou a carga. O dia e o progresso foram preservados.";
+        RaiseGameplayEvent(GameplayEventType.ExpeditionReturned, null, Day, notice);
+        Say(notice, 12f);
     }
 
     void DrawExpeditionUI()
@@ -202,9 +258,4 @@ public partial class Game
         }
     }
 
-    void ReleaseExpeditionMaterials()
-    {
-        foreach (var material in expeditionMaterials) if (material != null) Destroy(material);
-        expeditionMaterials.Clear();
-    }
 }

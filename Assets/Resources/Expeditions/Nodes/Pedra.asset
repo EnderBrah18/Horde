@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97643cee7d094664eb40593c740f5170, type: 3}
-  m_Name: Pedra
-  m_EditorClassIdentifier: Assembly-CSharp::ResourceNodeData
+  m_Name: "Pedra"
+  m_EditorClassIdentifier: "Assembly-CSharp::ResourceNodeData"
   displayName: "Pedra"
   resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
   visual: 1
-  color: {r: 0.5, g: 0.52, b: 0.5, a: 1}
-  nodesPerRegion: 8
-  minimumStock: 8
-  maximumStock: 14
+  color: {r: 0.5, g: 0.52, b: 0.55, a: 1}
+  nodesPerRegion: 9
+  minimumStock: 7
+  maximumStock: 12
   amountPerInteraction: 3

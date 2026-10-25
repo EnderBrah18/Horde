@@ -10,26 +10,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
-  m_Name: TorreReforcada
-  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
-  displayName: Torre Reforçada
-  description: Melhoria da torre básica.
-  order: 20
+  m_Name: "TorreReforcada"
+  m_EditorClassIdentifier: "Assembly-CSharp::BuildingData"
+  displayName: "Torre reforçada"
+  description: "Torre de disparo direto para defesa geral."
+  order: 11
   showInBuildMenu: 0
-  upgrade: {fileID: 0}
+  upgrade: {fileID: 11400000, guid: 12cbf260482f40a18307454859022a21, type: 2}
   kind: 1
-  menuCategory: 0
+  menuCategory: 2
   shape: 2
-  color: {r: 0.063545756, g: 0.7924528, b: 0.74967235, a: 1}
-  size: {x: 0.95, y: 1.5, z: 0.95}
+  color: {r: 0.15, g: 0.65, b: 0.75, a: 1}
+  size: {x: 1.6, y: 2.0, z: 1.6}
   costs:
   - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-    amount: 12
-  - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
-    amount: 2
+    amount: 22
+  - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+    amount: 16
+  - resource: {fileID: 11400000, guid: 99d9d5d1ded24c1297f66aa0165a2b0e, type: 2}
+    amount: 6
   requiresSpecialBuildPoint: 0
-  specialBuildPointId: 
-  maxHealth: 90
-  towerRange: 14
-  towerDamage: 10
-  towerCooldown: 0.4
+  specialBuildPointId: ""
+  maxHealth: 270
+  towerRange: 16
+  towerDamage: 14
+  towerCooldown: 1

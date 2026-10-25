@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 97643cee7d094664eb40593c740f5170, type: 3}
-  m_Name: Arvore
-  m_EditorClassIdentifier: Assembly-CSharp::ResourceNodeData
+  m_Name: "Arvore"
+  m_EditorClassIdentifier: "Assembly-CSharp::ResourceNodeData"
   displayName: "Madeira"
   resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
   visual: 0
   color: {r: 0.18, g: 0.45, b: 0.2, a: 1}
   nodesPerRegion: 18
-  minimumStock: 8
-  maximumStock: 14
-  amountPerInteraction: 3
+  minimumStock: 10
+  maximumStock: 16
+  amountPerInteraction: 4

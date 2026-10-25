@@ -20,6 +20,7 @@ public partial class Game
         public float bravery;
         public EnemyTemperament temperament;
         public EnemySocialBehavior behavior;
+        public EnemyBalanceSettings balance;
     }
     sealed class NightGroupPlan
     {
@@ -31,6 +32,7 @@ public partial class Game
     sealed class NightPlan
     {
         public int waves, groupsPerWave, total;
+        public int[] waveGroupCounts;
         public NightGroupPlan[] groups;
     }
 
@@ -49,38 +51,62 @@ public partial class Game
             nightDirector.minimumIncreasePercent,nightDirector.maximumIncreasePercent,nightDirector.extraEnemyBatchSize,
             nightDirector.repeatMinimumChance,random);
         int waves=Mathf.Min(total,VillageProgressionRules.WavesForNight(number,initialWaves,nightsPerExtraWave,maxWaves));
-        int perWave=Mathf.Min(Mathf.Max(1,groupsPerWave),Mathf.Max(1,total/waves));
-        var counts=NightPopulationHistory.Distribute(total,waves*perWave);
-        var plan=new NightPlan { waves=waves,groupsPerWave=perWave,total=total,groups=new NightGroupPlan[counts.Length] };
-        for(int group=0;group<counts.Length;group++)
+        var deployment=NightDeploymentRules.Plan(total,waves,groupsPerWave,openingPerGroup,number,nightDirector,random);
+        waves=deployment.Length;
+        var counts=new List<int>();
+        var waveGroupCounts=new int[waves];
+        for(int wave=0;wave<waves;wave++)
+        { counts.AddRange(deployment[wave]); waveGroupCounts[wave]=deployment[wave].Length; }
+        var plan=new NightPlan { waves=waves,groupsPerWave=waveGroupCounts[0],waveGroupCounts=waveGroupCounts,
+            total=total,groups=new NightGroupPlan[counts.Count] };
+        for(int group=0;group<counts.Count;group++)
         {
-            var profile=number==1?null:PickComposition(number,counts[group],total/(float)minimum,random);
+            var profiles=new List<EnemyGroupCompositionData>();
             var archetypes=new List<EnemyArchetypeData>();
-            if(profile!=null)
+            var names=new List<string>();
+            var tactic=random.NextDouble()<tacticalGroupChance?GroupTactic.Tactical:GroupTactic.Aggressive;
+            bool tacticChosen=false;
+            while(number>1 && archetypes.Count<counts[group])
             {
-                foreach(var slot in profile.members)
+                int remaining=counts[group]-archetypes.Count;
+                var selected=PickComposition(number,remaining,total/(float)minimum,random);
+                if(selected==null) break;
+                int count=selected.spawnCount>0?Mathf.Min(selected.spawnCount,remaining):remaining;
+                int start=archetypes.Count;
+                foreach(var slot in selected.members)
                     for(int i=0;i<Mathf.Max(0,slot.minimumPerGroup);i++) archetypes.Add(slot.archetype);
-                while(archetypes.Count<counts[group]) archetypes.Add(PickArchetype(profile,random));
+                while(archetypes.Count<start+count) archetypes.Add(PickArchetype(selected,random));
+                while(profiles.Count<archetypes.Count) profiles.Add(selected);
+                names.Add(selected.displayName);
+                // A physical group has one tactic; the first explicit instruction wins.
+                if(!tacticChosen && selected.forceTactic) { tactic=selected.tactic; tacticChosen=true; }
             }
+            while(archetypes.Count<counts[group]) { archetypes.Add(null); profiles.Add(null); }
             var spec=new NightGroupPlan { members=new NightEnemySpec[counts[group]],fixedOpening=number==1,
-                name=profile!=null?profile.displayName:"Grupo comum",
-                tactic=profile!=null&&profile.forceTactic?profile.tactic:
-                    random.NextDouble()<tacticalGroupChance?GroupTactic.Tactical:GroupTactic.Aggressive };
+                name=names.Count>0?string.Join(" + ",names):"Grupo comum",tactic=tactic };
             for(int i=0;i<spec.members.Length;i++)
             {
-                var archetype=profile!=null?archetypes[i]:null;
+                var profile=profiles[i];
+                var archetype=archetypes[i];
                 var type=archetype!=null?archetype.runtimeType:
                     number%Mathf.Max(1,tankEveryRounds)==0&&i==spec.members.Length-1?EnemyType.Tank:EnemyType.Common;
                 double braveryRoll=random.NextDouble();
                 float bravery=type==EnemyType.Tank?1f:braveryRoll<0.4?1f:braveryRoll<0.75?0.5f:0.2f;
                 if(type!=EnemyType.Tank&&bravery>=0.99f&&varyFanaticBraveryForTesting) bravery=1f+(float)random.NextDouble()*0.2f;
+                if(profile!=null) bravery=profile.ResolveBravery(bravery);
                 spec.members[i]=new NightEnemySpec { archetype=archetype,type=type,bravery=bravery,
-                    personality=type==EnemyType.Tank?Personality.Objective:profile!=null&&profile.uniformPersonality?profile.personality:
-                        random.NextDouble()<Mathf.Min(hunterBaseChance+hunterChancePerRound*number,hunterChanceCap)?Personality.Hunter:Personality.Objective,
+                    personality=profile!=null&&profile.uniformPersonality?profile.personality:
+                        archetype!=null?archetype.personality:type==EnemyType.Tank?Personality.Objective:
+                        random.NextDouble()<Mathf.Min(saboteurBaseChance+saboteurChancePerRound*number,saboteurChanceCap)?Personality.Saboteur:Personality.Objective,
                     temperament=number==1?EnemyTemperament.Disciplined:profile!=null&&profile.uniformTemperament?profile.temperament:
                         type==EnemyType.Tank?EnemyTemperament.Disciplined:(EnemyTemperament)random.Next(4),
                     behavior=number==1?EnemySocialBehavior.Proactive:profile!=null&&profile.uniformBehavior?profile.behavior:
                         type==EnemyType.Tank?EnemySocialBehavior.Proactive:(EnemySocialBehavior)random.Next(3) };
+                if(spec.members[i].archetype==null)
+                    spec.members[i].archetype=EnemyCatalog.Resolve(type,spec.members[i].personality);
+                if(!EnemyFactory.CanSpawn(spec.members[i].archetype))
+                    throw new InvalidOperationException("Definição ou prefab de inimigo inválido: "+type);
+                spec.members[i].balance=nightDirector.BalanceForNight(spec.members[i].archetype.balance,number);
             }
             plan.groups[group]=spec;
         }
@@ -102,7 +128,8 @@ public partial class Game
                 if(slot==null||slot.archetype==null||slot.archetype.balance==null) { valid=false; break; }
                 required+=Mathf.Max(0,slot.minimumPerGroup); memberWeight+=Mathf.Max(0f,slot.weight);
             }
-            if(!valid||required>groupCount||(required<groupCount&&memberWeight<=0f)) continue;
+            int available=profile.spawnCount>0?Mathf.Min(profile.spawnCount,groupCount):groupCount;
+            if(!valid||required>available||(required<available&&memberWeight<=0f)) continue;
             totalWeight+=profile.selectionWeight; candidates.Add(profile);
         }
         if(candidates.Count==0) return null;

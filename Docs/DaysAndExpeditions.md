@@ -27,7 +27,7 @@ Em Game > Balanceamento das noites:
 Com Initial Waves/Nights Per Extra Wave/Max Waves em 3/2/5: noites 1 e 2 têm 3 levas;
 noites 3 e 4 têm 4; a partir da noite 5, são 5. Com Groups Per Wave = 3, a primeira noite tem
 9 grupos no total: 3 na primeira rodada, 3 na segunda e 3 na terceira.
-Os cenários de playtest existentes conservam seus ajustes próprios; criar um cenário novo usa os novos padrões.
+A vila usa a configuração da cena e do diretor noturno.
 Vida e dano dependem dos arquétipos sorteados. A progressão do mínimo de inimigos ocorre em blocos de cinco noites,
 usando o recorde do bloco anterior, e não um aumento linear fixo.
 
@@ -88,3 +88,5 @@ Esses testes não substituem o Play Mode para carregamento aditivo, câmera e in
 Roteiro manual: Dia 1 sem rota; 3 levas da primeira noite; derrota sem desbloqueio; vitória → Dia 2 e aviso único;
 E no posto; viajar/retornar duas vezes; conferir vida, saldo, NPCs, atribuições e reembolso; iniciar a noite do Dia 2;
 alterar Discovery Day para 3 e confirmar liberação somente após duas noites vencidas.
+
+Morte do jogador na vila agora inicia respawn de 10 segundos com câmera livre, sem encerrar a noite. Só o núcleo destruído encerra a run. O fluxo de derrota na expedição permanece separado. Veja PlayerRespawn.md.

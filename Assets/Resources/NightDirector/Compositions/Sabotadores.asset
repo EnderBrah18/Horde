@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4734506772ab4231b5ab5ec2844cc04c, type: 3}
+  m_Name: "Sabotadores"
+  m_EditorClassIdentifier: "Assembly-CSharp::EnemyGroupCompositionData"
+  displayName: "Ataque às torres"
+  firstNight: 3
+  selectionWeight: 0.65
+  minimumPopulationRatio: 1
+  maximumPopulationRatio: 10
+  members:
+  - archetype: {fileID: 11400000, guid: c8ca750bfb1943f494460ee07fa6992f, type: 2}
+    minimumPerGroup: 1
+    weight: 1
+  - archetype: {fileID: 11400000, guid: eb2602b1a4824d689b9449d82cfeedb1, type: 2}
+    minimumPerGroup: 2
+    weight: 1
+  spawnCount: 3
+  uniformTemperament: 1
+  temperament: 0
+  uniformBehavior: 1
+  behavior: 0
+  uniformPersonality: 1
+  personality: 1
+  uniformBravery: 1
+  bravery: 1
+  forceTactic: 1
+  tactic: 0

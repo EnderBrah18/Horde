@@ -13,23 +13,27 @@ public static class CreateDefaultBuildings
         if (!AssetDatabase.IsValidFolder("Assets/Resources/Buildings"))
             AssetDatabase.CreateFolder("Assets/Resources", "Buildings");
 
-        Make("Wall", d =>
+        Make("Parede", d =>
         {
-            d.displayName = "Parede"; d.order = 1; d.kind = BuildingKind.Wall;
+            d.displayName = "Cerca"; d.order = 1; d.kind = BuildingKind.Wall;
             d.description = "Bloqueia o caminho. Inimigos batem nela para abrir passagem.";
             d.shape = PrimitiveType.Cube; d.color = new Color(0.55f, 0.55f, 0.55f);
-            d.size = new Vector3(0.95f, 1.5f, 0.95f);
-            d.costs = new[] { new ResourceAmount(DefaultResources.Wood, 5) }; d.maxHealth = 60f;
+            d.size = new Vector3(2.4f, 1.2f, 0.4f);
+            d.costs = new[] { new ResourceAmount(DefaultResources.Wood, 8),
+                new ResourceAmount(Resources.Load<ResourceData>("ResourceDefinitions/Materials/PlantFiber"),2) }; d.maxHealth = 140f;
+            d.upgrade = AssetDatabase.LoadAssetAtPath<BuildingData>("Assets/Resources/Buildings/CercaReforcada.asset");
         });
 
-        Make("Tower", d =>
+        Make("Torre", d =>
         {
-            d.displayName = "Torre"; d.order = 2; d.kind = BuildingKind.Tower;
+            d.displayName = "Torre de vigia"; d.order = 10; d.kind = BuildingKind.Tower;
             d.description = "Atira no inimigo mais próximo.";
             d.shape = PrimitiveType.Cylinder; d.color = new Color(0.2f, 0.8f, 0.9f);
-            d.size = new Vector3(0.6f, 1.2f, 0.6f);
-            d.costs = new[] { new ResourceAmount(DefaultResources.Wood, 15), new ResourceAmount(DefaultResources.Crystals, 2) }; d.maxHealth = 50f;
-            d.towerRange = 12f; d.towerDamage = 7f; d.towerCooldown = 0.45f;
+            d.size = new Vector3(1.6f, 2f, 1.6f);
+            d.costs = new[] { new ResourceAmount(DefaultResources.Wood, 28),
+                new ResourceAmount(Resources.Load<ResourceData>("ResourceDefinitions/Materials/Stone"),8) }; d.maxHealth = 180f;
+            d.towerRange = 14f; d.towerDamage = 9f; d.towerCooldown = 1f;
+            d.upgrade = AssetDatabase.LoadAssetAtPath<BuildingData>("Assets/Resources/Buildings/TorreReforcada.asset");
         });
 
         AssetDatabase.SaveAssets();

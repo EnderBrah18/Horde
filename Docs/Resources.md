@@ -46,7 +46,7 @@ O evento `Changed(ResourceData, int)` fornece o novo saldo para a futura HUD em 
 - `BuildingData.Costs` aceita qualquer combinação de recursos. Uma lista vazia significa construção gratuita.
 - Instalações usam `VillageFacilityData.Levels[].Production Per Night`, com vários recursos por nível. A entrega acontece pelo `VillageProduction`, no evento de amanhecer.
 - Os antigos Suprimentos foram migrados para Cristais de Mana, mantendo quantidades iniciais, recompensas e custos.
-- Expansão e início da partida ainda usam os dois recursos padrão. Seus campos de quantidade continuam no Game, VillageBuildArea e PlaytestScenario.
+- O início da run e a reserva do amanhecer usam RunEconomyData, com uma lista de recursos/quantidades. A expansão ainda usa madeira e cristais no VillageBuildArea.
 - Os novos assets não criam pontos de coleta, receitas ou produtores automaticamente.
 
 Não mova nem remova os assets `Materials/Wood` e `Magical/ManaCrystal` sem atualizar os caminhos em DefaultResources.
@@ -57,3 +57,5 @@ Outros recursos são ligados por referência e podem ser organizados em outras p
 `Tests/Economy/WalletTests.cs` exercita a implementação real de Wallet e ResourceAmount fora do Unity,
 com substitutos mínimos para o asset ResourceData e o atributo Min. Os testes verificam saldos,
 pagamento integral, custos repetidos, custos inválidos, overflow e notificações para a HUD.
+
+Base atual de custos, produção e combate: DemoResourceBalance.md.

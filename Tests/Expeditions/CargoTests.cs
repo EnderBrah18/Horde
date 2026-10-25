@@ -71,6 +71,27 @@ static class CargoTests
         var observerWallet=new Wallet(); observerWallet.Changed+=(r,n)=>throw new Exception("test observer failure");
         try { observerCargo.TryDeliver(observerWallet); } catch(Exception) {}
         Check(observerWallet.Get(wood)==2 && observerWallet.Get(iron)==3 && !observerCargo.TryDeliver(observerWallet),"observer failure cannot partially commit or duplicate cargo");
+        var defeated=new ExpeditionCargo(20); defeated.Collect(wood,7); defeated.Collect(iron,3);
+        Check(defeated.ApplyDefeatLoss(50)==6 && defeated.Count==4,"defeat retains rounded-down half of each resource");
+        Check(defeated.Items[wood]==3 && defeated.Items[iron]==1,"defeat preserves remaining resource identities and quantities");
+        Check(defeated.ApplyDefeatLoss(50)==0 && defeated.Count==4,"repeated defeat callback cannot apply loss twice");
+        var recoveredWallet=new Wallet();
+        Check(defeated.TryDeliver(recoveredWallet) && recoveredWallet.Get(wood)==3 && recoveredWallet.Get(iron)==1,"defeat delivers only surviving cargo");
+        Check(defeated.ApplyDefeatLoss(100)==0 && !defeated.TryDeliver(recoveredWallet),"delivered cargo cannot be penalized or credited again");
+        var allLost=new ExpeditionCargo(10); allLost.Collect(wood,4);
+        Check(allLost.ApplyDefeatLoss(100)==4 && allLost.Count==0 && allLost.TryDeliver(new Wallet()),"complete cargo loss still allows successful return with empty load");
+        var noLoss=new ExpeditionCargo(10); noLoss.Collect(wood,4);
+        Check(noLoss.ApplyDefeatLoss(0)==0 && noLoss.Count==4,"zero configured loss preserves cargo");
+        Check(ExpeditionDefeatRules.RetainedAmount(int.MaxValue,50)==1073741823,"cargo loss arithmetic avoids integer overflow");
+        Check(ExpeditionDefeatRules.RetainedAmount(10,-20)==10 && ExpeditionDefeatRules.RetainedAmount(10,200)==0,"loss percentages are clamped safely");
+        Check(ExpeditionDefeatRules.ReturnHealth(100,50)==50,"defeat returns alive at configured reduced health");
+        Check(ExpeditionDefeatRules.ReturnHealth(120,25)==30,"return health uses actual maximum health");
+        Check(ExpeditionDefeatRules.ReturnHealth(100,0)==1 && ExpeditionDefeatRules.ReturnHealth(100,200)==100,"return health is positive and never exceeds maximum");
+        var pending=new ExpeditionCargo(10); pending.Collect(wood,8);pending.ApplyDefeatLoss(50);
+        var saturated=new Wallet();saturated.Set(wood,int.MaxValue);
+        Check(!pending.TryDeliver(saturated) && pending.Count==4 && !pending.Delivered,"overflow preserves penalized remainder for deferred delivery");
+        saturated.Set(wood,0);
+        Check(pending.TryDeliver(saturated) && saturated.Get(wood)==4,"deferred delivery does not repeat penalty or duplicate cargo");
         Console.WriteLine("PASS: "+checks+" cargo/node checks");
     }
 }

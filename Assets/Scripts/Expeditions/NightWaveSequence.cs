@@ -5,11 +5,24 @@ public sealed class NightWaveSequence
 {
     public int CurrentWave { get; private set; } = 1;
     public int TotalWaves { get; }
-    public int GroupsPerWave { get; }
+    readonly int[] groupCounts;
+    public int GroupsPerWave => groupCounts[CurrentWave - 1];
     public int SpawnedGroups { get; private set; }
 
     public NightWaveSequence(int totalWaves, int groupsPerWave)
-    { TotalWaves = Math.Max(1, totalWaves); GroupsPerWave = Math.Max(1, groupsPerWave); }
+    {
+        TotalWaves = Math.Max(1, totalWaves);
+        groupCounts = new int[TotalWaves];
+        for (int i = 0; i < TotalWaves; i++) groupCounts[i] = Math.Max(1, groupsPerWave);
+    }
+
+    public NightWaveSequence(int[] groupsPerWave)
+    {
+        if (groupsPerWave == null || groupsPerWave.Length == 0) throw new ArgumentException("Wave schedule is empty.");
+        groupCounts = (int[])groupsPerWave.Clone();
+        foreach (int count in groupCounts) if (count < 1) throw new ArgumentException("Wave must contain a group.");
+        TotalWaves = groupCounts.Length;
+    }
 
     public void RecordGroupSpawned()
     {

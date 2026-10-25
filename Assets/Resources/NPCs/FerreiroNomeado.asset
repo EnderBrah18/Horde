@@ -22,9 +22,17 @@ MonoBehaviour:
   moveSpeed: 3
   placeholderColor: {r: 0.3, g: 0.7, b: 0.8, a: 1}
   recruitmentCosts:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 12
+  - resource: {fileID: 11400000, guid: 84689ec880e54eb98503a841ac4c12f5, type: 2}
+    amount: 8
   - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
     amount: 3
   recoveryCosts:
+  - resource: {fileID: 11400000, guid: 84689ec880e54eb98503a841ac4c12f5, type: 2}
+    amount: 4
+  - resource: {fileID: 11400000, guid: f9b1a142d89b421d88d0094a8ad56d2c, type: 2}
+    amount: 3
   - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
     amount: 1
   allowedRoles:

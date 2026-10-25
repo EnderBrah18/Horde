@@ -72,6 +72,15 @@ public class EnemyGroup : MonoBehaviour
         if (Leader == e) Leader = null;
     }
 
+    public void ReleaseForPositioning(Enemy member)
+    {
+        if (member == null || member == Leader || !members.Contains(member)) return;
+        Remove(member);
+        // Voluntary repositioning is not a casualty for morale or spawn completion.
+        expected = Mathf.Max(0, expected - 1);
+        spawned = Mathf.Max(0, spawned - 1);
+    }
+
     public Vector3 CohesionSteering(Enemy member)
     {
         if (!Marching || member == null || Leader == null || members.Count < 2)
@@ -106,6 +115,8 @@ public class EnemyGroup : MonoBehaviour
 
     public Vector3 TravelSteering(Enemy member, Vector3 route, bool engagingStructure)
     {
+        if (Leader != null && Leader.Positioning != null &&
+            Leader.Positioning.TrySteerGroupMember(member, route, out var coverMovement)) return coverMovement;
         if (Leader == null || member.type == EnemyType.Tank || engagingStructure)
             return route;
 
@@ -124,6 +135,11 @@ public class EnemyGroup : MonoBehaviour
         }
         else if (member == Leader) return route;
 
+        if (tactic == GroupTactic.Tactical)
+            return TankCoverFormation.TrySteer(member, anchor, formationRearDistance, formationSpacing, out var tacticalMovement)
+                ? tacticalMovement : route;
+
+        // Aggressive swarms keep their own spread around a leader; they do not reserve Tank cover slots.
         int slot = 0;
         foreach (var other in members)
         {
@@ -134,28 +150,6 @@ public class EnemyGroup : MonoBehaviour
         forward.y = 0f;
         forward.Normalize();
         Vector3 right = Vector3.Cross(Vector3.up, forward);
-        if (tactic == GroupTactic.Tactical)
-        {
-            int row = slot / 3;
-            int column = slot % 3 - 1;
-            Vector3 destination = anchor.transform.position - forward * (formationRearDistance + row * formationSpacing)
-                                  + right * column * formationSpacing;
-            Vector3 delta = destination - member.transform.position;
-            delta.y = 0f;
-            // Faster members wait rather than walking backwards or overtaking the front line.
-            float gap = Vector3.Dot(delta, forward);
-            if (gap <= 0.6f) return Vector3.zero;
-            var grid = GridWorld.I;
-            Vector2Int cell = grid.WorldToCell(destination);
-            if (!grid.InBounds(cell) || grid.IsHardBlocked(cell) || grid.Get(cell) != null) return route;
-            // Formation is a gentle preference; never reverse the route to regain a slot.
-            Vector3 formationDirection = Vector3.Dot(delta.normalized, route.normalized) > 0f
-                ? route + delta.normalized * 0.4f : route;
-            float matchingSpeed = anchor.speed / Mathf.Max(0.1f, member.speed);
-            float pace = Mathf.Clamp01(matchingSpeed + (gap - formationSpacing) / (formationSpacing * 3f));
-            return formationDirection.normalized * pace;
-        }
-
         // Stable, different offsets keep the swarm broad without frame-to-frame jitter.
         float angle = slot * 2.399963f;
         Vector3 spreadPosition = Leader.transform.position +
@@ -245,6 +239,11 @@ public class EnemyGroup : MonoBehaviour
     void UpdateSeparatedMembers()
     {
         if (Leader == null) return;
+        if (Leader.Positioning != null && Leader.Positioning.ExternalGroupAnchor != null)
+        {
+            separatedFor.Clear();
+            return;
+        }
         foreach (var member in members.ToArray())
         {
             if (member == null || member == Leader) continue;
@@ -268,6 +267,7 @@ public class EnemyGroup : MonoBehaviour
         foreach (var enemy in Enemy.All)
         {
             if (enemy == null || !enemy.AvailableForRecruitment) continue;
+            if (enemy.NavigationGrid != Leader.NavigationGrid || enemy.gameObject.scene != gameObject.scene) continue;
             Vector3 delta = enemy.transform.position - Leader.transform.position;
             delta.y = 0f;
             if (delta.sqrMagnitude <= groupMergeRadius * groupMergeRadius)
@@ -279,6 +279,7 @@ public class EnemyGroup : MonoBehaviour
     {
         if (!Marching || Leader == null || expected <= 0 || spawned < expected || members.Count == 0)
             return;
+        if (Leader.Positioning != null && Leader.Positioning.ExternalGroupAnchor != null) return;
 
         EnemyGroup[] groups = FindObjectsByType<EnemyGroup>();
         Vector3 ownCenter = GroupCenter();
@@ -287,6 +288,9 @@ public class EnemyGroup : MonoBehaviour
             if (other == null || other == this || other.absorbed || !other.Marching || other.Leader == null ||
                 other.expected <= 0 || other.spawned < other.expected || other.members.Count == 0)
                 continue;
+
+            if (other.Leader.NavigationGrid != Leader.NavigationGrid || other.gameObject.scene != gameObject.scene ||
+                (other.Leader.Positioning != null && other.Leader.Positioning.ExternalGroupAnchor != null)) continue;
 
             float mergeRadius = Mathf.Max(groupMergeRadius, other.groupMergeRadius);
             if (mergeRadius <= 0f) continue;

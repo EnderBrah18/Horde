@@ -10,31 +10,45 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49009e213cc64ab9b75433f86a9877d7, type: 3}
-  m_Name: Poco
-  m_EditorClassIdentifier: Assembly-CSharp::VillageFacilityData
+  m_Name: "Poco"
+  m_EditorClassIdentifier: "Assembly-CSharp::VillageFacilityData"
   displayName: "Poço"
-  description: "Desbloqueia um serviço da vila. Receitas e interações serão integradas posteriormente."
+  description: "Instalação de serviço. Serviços e receitas continuam aguardando integração à lore; não produz recursos automaticamente."
   icon: {fileID: 0}
   kind: 1
-  maxHealth: 120
+  maxHealth: 300
   levels:
-  - displayName: Nível 1
+  - displayName: "Nível 1"
     costs:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 10
+      amount: 24
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 12
     productionPerNight: []
+    minimumWorkers: 2
+    maximumWorkers: 6
+    extraWorkersPerBonus: 2
+    productionBonusPerGroup: 1
     repairCosts:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
-      amount: 5
+      amount: 8
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 3
     npcCapacity: 0
-  - displayName: Nível 2
+  - displayName: "Nível 2"
     costs:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 36
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
       amount: 20
-    - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
-      amount: 2
     productionPerNight: []
+    minimumWorkers: 2
+    maximumWorkers: 8
+    extraWorkersPerBonus: 2
+    productionBonusPerGroup: 1
     repairCosts:
     - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 12
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
       amount: 5
     npcCapacity: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Torre de Defesa Especial
   description: Só pode ser construída nos pontos especiais.
   order: 10
-  showInBuildMenu: 1
+  showInBuildMenu: 0
   upgrade: {fileID: 0}
   kind: 1
   menuCategory: 0

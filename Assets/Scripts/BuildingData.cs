@@ -22,7 +22,7 @@ public class BuildingData : ScriptableObject
     [Header("Visual (formas geométricas)")]
     public PrimitiveType shape = PrimitiveType.Cube;
     public Color color = Color.gray;
-    [Tooltip("X e Z em fração da célula (0.95 = quase a célula toda). Y é a altura em metros.")]
+    [Tooltip("Escala do protótipo em unidades do mundo. Cilindros e cápsulas têm altura igual a 2 vezes Y.")]
     public Vector3 size = new Vector3(0.95f, 1.5f, 0.95f);
 
     [Header("Custo")]

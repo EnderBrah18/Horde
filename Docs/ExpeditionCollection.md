@@ -61,3 +61,16 @@ A compilação e esses testes não verificam a apresentação ou a navegação r
 
 No Play Mode: confira os quatro recursos, colisão/navegação entre árvores, E até esgotar um nó,
 carga cheia/parcial, retorno com carga vazia e cheia, saldos no posto, segunda viagem e restauração do zoom.
+
+
+## Cadastro de destinos na vila
+
+Na CenaPrincipal, ExpeditionManager cadastra explicitamente cada ExpeditionData.
+A lista vazia de destinos não carrega automaticamente todos os assets de Resources.
+O toggle de liberar expedições na manhã do dia 1 fica neste gerenciador.
+Os inimigos são configurados em Individuals e Compositions de cada ExpeditionEnemyRegion.
+Quantidades, tipos, composições e posicionamento são configurados em cada região; veja ExpeditionEnemySpawns.md.
+O ExpeditionController continua na cena Expedicoes, cuidando do mapa e pontos locais.
+Ao compartilhar uma cena entre destinos, o perfil escolhido na vila prevalece sobre o perfil padrão local.
+
+Derrota em expedição retorna à vila automaticamente com perda de carga e vida reduzida. Configuração no ExpeditionManager; detalhes em ExpeditionDefeats.md.
