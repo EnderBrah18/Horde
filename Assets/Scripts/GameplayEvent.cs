@@ -10,7 +10,16 @@ public enum GameplayEventType
     CoreDestroyed,
     NightStarted,
     DawnReached,
-    EnemyGroupMerged
+    EnemyGroupMerged,
+    FacilityUnlocked,
+    FacilityUpgraded,
+    FacilitiesProduced,
+    FacilityBroken,
+    FacilityRepaired,
+    WaveStarted,
+    ExpeditionDiscovered,
+    ExpeditionDeparted,
+    ExpeditionReturned
 }
 
 [Serializable]

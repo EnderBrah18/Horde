@@ -10,6 +10,7 @@ public class Enemy : MonoBehaviour
     public static readonly List<Enemy> All = new List<Enemy>();
 
     public EnemyType type;
+    public EnemyArchetypeData archetype;
     public Personality personality;
     public float braveza = 1f;
     public EnemyGroup group;
@@ -22,6 +23,12 @@ public class Enemy : MonoBehaviour
     public float damage = 4f;
     public float attackCooldown = 1f;
     public float attackRange = 3f;
+    [Header("Repulsão")]
+    [Tooltip("0 recebe toda a repulsão; 1 é imune. Configurado pelo balanceamento do tipo ao nascer.")]
+    [Range(0f, 1f)] public float knockbackResistance = 0.1f;
+    Vector3 knockbackVelocity;
+    float knockbackRemaining;
+    float knockbackDeceleration;
     [Min(0.1f)] public float steeringResponse = 12f;
     [Min(1f)] public float turnSpeed = 300f;
     [Min(0f)] public float obstacleClearance = 0.6f;
@@ -77,6 +84,8 @@ public class Enemy : MonoBehaviour
 
     public void Init(EnemyType t, Personality p, float b, EnemyGroup g)
     {
+        if (GetComponent<DamageFlash>() == null) gameObject.AddComponent<DamageFlash>();
+        if (GetComponent<OcclusionOutline>() == null) gameObject.AddComponent<OcclusionOutline>();
         type = t; personality = p; braveza = b; group = g;
         socialProfile = GetComponent<EnemySocialProfile>();
         if (socialProfile == null) socialProfile = gameObject.AddComponent<EnemySocialProfile>();
@@ -116,6 +125,7 @@ public class Enemy : MonoBehaviour
         attackCooldown = balance.attackCooldown;
         attackRange = balance.attackRange;
         tacticRadius = balance.tacticRadius;
+        knockbackResistance = Mathf.Clamp01(balance.knockbackResistance);
         if (hp != null) hp.Setup(balance.maxHealth);
     }
 
@@ -202,6 +212,12 @@ public class Enemy : MonoBehaviour
             if (damagedTargetTimer <= 0f || damagedByTarget == null || damagedByTarget.health == null ||
                 damagedByTarget.health.current <= 0f)
                 damagedByTarget = null;
+        }
+
+        if (knockbackRemaining > 0f)
+        {
+            UpdateKnockback(dt);
+            return;
         }
 
         Vector3 dir = Vector3.zero;
@@ -298,6 +314,69 @@ public class Enemy : MonoBehaviour
                       $"approach={approachInfo}", this);
             movementDebugPending = false;
         }
+    }
+
+    // Reusable by weapons, traps and future defensive structures, independently
+    // of damage. Distance is reduced by this enemy's resistance.
+    public void ApplyKnockback(Vector3 direction, float distance, float duration = 0.2f)
+    {
+        if (!isActiveAndEnabled || hp == null || hp.current <= 0f || (Game.I != null && Game.I.lost)) return;
+        direction.y = 0f;
+        float displacement = Mathf.Max(0f, distance) * (1f - Mathf.Clamp01(knockbackResistance));
+        if (displacement <= 0f || direction.sqrMagnitude < 0.0001f) return;
+        duration = Mathf.Max(0.01f, duration);
+        knockbackVelocity += direction.normalized * (2f * displacement / duration);
+        knockbackRemaining = duration;
+        knockbackDeceleration = knockbackVelocity.magnitude / duration;
+        smoothedMotion = Vector3.zero;
+        detourPreferenceUntil = 0f;
+        stuckTimer = 0f;
+        targetDecisionTimer = 0f;
+        if (state == EState.Flee) deserterIdleTime = 0f;
+    }
+
+    void UpdateKnockback(float dt)
+    {
+        float stepTime = Mathf.Min(dt, knockbackRemaining);
+        Vector3 nextVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, knockbackDeceleration * stepTime);
+        Vector3 displacement = (knockbackVelocity + nextVelocity) * (0.5f * stepTime);
+        knockbackRemaining = Mathf.Max(0f, knockbackRemaining - stepTime);
+        knockbackVelocity = nextVelocity;
+        var grid = GridWorld.I;
+        if (grid == null) { knockbackRemaining = 0f; return; }
+        int steps = Mathf.Max(1, Mathf.CeilToInt(displacement.magnitude / Mathf.Min(0.15f, grid.cellSize * 0.25f)));
+        Vector3 step = displacement / steps;
+        for (int i = 0; i < steps; i++)
+        {
+            Vector3 position = transform.position;
+            Vector3 destination = position + step;
+            if (!KnockbackPositionFree(destination) || WouldHitStructure(position, destination))
+            {
+                knockbackRemaining = 0f;
+                knockbackVelocity = Vector3.zero;
+                break;
+            }
+            transform.position = destination;
+        }
+    }
+
+    bool KnockbackPositionFree(Vector3 position)
+    {
+        var grid = GridWorld.I;
+        float bodyRadius = Mathf.Max(0.15f, Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.45f);
+        Vector2Int min = grid.WorldToCell(position - new Vector3(bodyRadius, 0f, bodyRadius));
+        Vector2Int max = grid.WorldToCell(position + new Vector3(bodyRadius, 0f, bodyRadius));
+        for (int x = min.x; x <= max.x; x++)
+            for (int z = min.y; z <= max.y; z++)
+            {
+                var cell = new Vector2Int(x, z);
+                Vector3 center = grid.CellToWorld(cell);
+                float dx = Mathf.Max(0f, Mathf.Abs(position.x - center.x) - grid.cellSize * 0.5f);
+                float dz = Mathf.Max(0f, Mathf.Abs(position.z - center.z) - grid.cellSize * 0.5f);
+                if (dx * dx + dz * dz <= bodyRadius * bodyRadius &&
+                    (!grid.InBounds(cell) || grid.IsHardBlocked(cell) || grid.Get(cell) != null)) return false;
+            }
+        return true;
     }
 
     Vector3 Wander(float dt)
@@ -512,8 +591,7 @@ public class Enemy : MonoBehaviour
 
     static bool IsValidTarget(Structure structure)
     {
-        return structure != null && structure.isActiveAndEnabled && structure.health != null &&
-               structure.health.current > 0f;
+        return structure != null && structure.CanBeAttacked;
     }
 
     static float FlatDistance(Vector3 a, Vector3 b)
@@ -696,14 +774,7 @@ public class Enemy : MonoBehaviour
                 var routeBlocker = g.Get(routeCell);
                 if (routeBlocker != null)
                 {
-                    if (type != EnemyType.Tank && TryFindDetour(pos, routeDir, mult, dt,
-                            out Vector3 routeDetour, out Vector3 routeDetourDirection))
-                    {
-                        transform.position = routeDetour;
-                        return;
-                    }
-                    if (type != EnemyType.Tank || g.IsTankBreakableWall(routeBlocker))
-                        TryAttack(routeBlocker);
+                    TryAttack(routeBlocker);
                     return;
                 }
                 np = routePos;
@@ -729,7 +800,7 @@ public class Enemy : MonoBehaviour
                 return;
             }
 
-            if (type == EnemyType.Tank && g.IsTankBreakableWall(hitStructure))
+            if (IsValidTarget(hitStructure))
             {
                 TryAttack(hitStructure);
                 return;
@@ -851,7 +922,7 @@ public class Enemy : MonoBehaviour
         int structureMask = 0;
         foreach (var structure in Structure.All)
         {
-            if (structure == null) continue;
+            if (structure == null || !structure.BlocksMovement) continue;
             var collider = structure.GetComponent<Collider>();
             if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy) continue;
             structureMask |= 1 << structure.gameObject.layer;
@@ -859,10 +930,17 @@ public class Enemy : MonoBehaviour
         if (structureMask == 0) return false;
 
         float radius = Mathf.Max(0.15f, Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.45f);
-        if (!Physics.SphereCast(from, radius, displacement.normalized, out RaycastHit hit, distance + 0.01f,
-            structureMask, QueryTriggerInteraction.Ignore)) return false;
-        hitStructure = hit.collider.GetComponentInParent<Structure>();
-        return true;
+        float nearest = float.PositiveInfinity;
+        foreach (var hit in Physics.SphereCastAll(from, radius, displacement.normalized, distance + 0.01f,
+            structureMask, QueryTriggerInteraction.Ignore))
+        {
+            var candidate = hit.collider.GetComponentInParent<Structure>();
+            if (candidate != null && !candidate.BlocksMovement) continue;
+            if (hit.distance >= nearest) continue;
+            nearest = hit.distance;
+            hitStructure = candidate;
+        }
+        return nearest < float.PositiveInfinity;
     }
 
     Vector3 ObstacleSpacing(Vector3 movement)
@@ -872,7 +950,7 @@ public class Enemy : MonoBehaviour
         float radius = NavigationRadius;
         foreach (var structure in Structure.All)
         {
-            if (structure == null) continue;
+            if (structure == null || !structure.BlocksMovement) continue;
             if (structure == selectedTarget && FlatDistance(position, structure.transform.position) <= attackRange + radius)
                 continue;
             var collider = structure.GetComponent<Collider>();
@@ -903,7 +981,7 @@ public class Enemy : MonoBehaviour
 
     void TryAttack(Structure s)
     {
-        if (s == null || atkTimer > 0f) return;
+        if (!IsValidTarget(s) || atkTimer > 0f) return;
         if (DebugTargetingEnabled())
             Debug.Log($"[EnemyAI][Attack] {name} attacks={TargetName(s)} selected={TargetName(selectedTarget)} " +
                       $"distance={FlatDistance(transform.position, s.transform.position):0.0} range={attackRange:0.0} " +

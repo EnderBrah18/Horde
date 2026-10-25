@@ -19,12 +19,10 @@ MonoBehaviour:
   shape: 3
   color: {r: 0.42, g: 0.24, b: 0.10, a: 1}
   size: {x: 2.4, y: 1.2, z: 0.4}
-  woodCost: 5
-  suppliesCost: 0
+  costs:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 5
   maxHealth: 60
   towerRange: 12
   towerDamage: 7
   towerCooldown: 0.45
-  produces: 0
-  amount: 0
-  cycleSeconds: 5

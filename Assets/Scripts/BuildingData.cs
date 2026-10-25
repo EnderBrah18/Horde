@@ -1,7 +1,7 @@
 using UnityEngine;
 
-public enum ProductionMode { None, Active, Passive }
-public enum BuildingMenuCategory { Automatic, Defense, Production, Services, Housing, Utility, Other }
+public enum BuildingKind { Wall = 0, Tower = 1 }
+public enum BuildingMenuCategory { Automatic = 0, Defense = 1, Offense = 2 }
 
 // Uma construção = um asset. Balanceie tudo no Inspector, sem mexer em código.
 [CreateAssetMenu(menuName = "Village/Building", fileName = "NewBuilding")]
@@ -11,8 +11,12 @@ public class BuildingData : ScriptableObject
     public string displayName = "Construção";
     [TextArea] public string description;
     public int order;                       // posição no menu (1, 2, 3...)
-    public StructureKind kind = StructureKind.Wall;
-    [Tooltip("Automatic classifies walls/towers as defense and producers by their output. Choose a category to override it.")]
+    public bool showInBuildMenu = true;
+    [Tooltip("Próxima versão desta construção. Os Costs desse asset são cobrados pela melhoria.")]
+    public BuildingData upgrade;
+    public BuildingKind kind = BuildingKind.Wall;
+    public StructureKind RuntimeKind => kind == BuildingKind.Wall ? StructureKind.Wall : StructureKind.Tower;
+    [Tooltip("Automatic coloca barreiras em Defesas e torres em Ofensivas.")]
     public BuildingMenuCategory menuCategory = BuildingMenuCategory.Automatic;
 
     [Header("Visual (formas geométricas)")]
@@ -22,8 +26,7 @@ public class BuildingData : ScriptableObject
     public Vector3 size = new Vector3(0.95f, 1.5f, 0.95f);
 
     [Header("Custo")]
-    public int woodCost = 5;
-    public int suppliesCost = 0;
+    public ResourceAmount[] costs = new ResourceAmount[0];
 
     [Header("Posicionamento")]
     [Tooltip("Quando ativo, esta construção só pode ocupar um ponto especial com o mesmo ID.")]
@@ -38,20 +41,13 @@ public class BuildingData : ScriptableObject
     [Min(0f)] public float towerDamage = 7f;
     [Min(0.01f)] public float towerCooldown = 0.45f;
 
-    [Header("Produção (opcional)")]
-    public ProductionMode productionMode = ProductionMode.None;
-    public ResourceType produces = ResourceType.Wood;
-    public int amount = 0;                  // 0 = não produz
-    public float cycleSeconds = 5f;
-
     void OnValidate()
     {
-        woodCost = Mathf.Max(0, woodCost);
-        suppliesCost = Mathf.Max(0, suppliesCost);
+        if (costs != null)
+            for (int i = 0; i < costs.Length; i++) costs[i].amount = Mathf.Max(0, costs[i].amount);
         maxHealth = Mathf.Max(1f, maxHealth);
         towerRange = Mathf.Max(0f, towerRange);
         towerDamage = Mathf.Max(0f, towerDamage);
         towerCooldown = Mathf.Max(0.01f, towerCooldown);
-        cycleSeconds = Mathf.Max(0.1f, cycleSeconds);
     }
 }

@@ -280,7 +280,7 @@ public class EnemyGroup : MonoBehaviour
         if (!Marching || Leader == null || expected <= 0 || spawned < expected || members.Count == 0)
             return;
 
-        EnemyGroup[] groups = FindObjectsByType<EnemyGroup>(FindObjectsSortMode.None);
+        EnemyGroup[] groups = FindObjectsByType<EnemyGroup>();
         Vector3 ownCenter = GroupCenter();
         foreach (var other in groups)
         {

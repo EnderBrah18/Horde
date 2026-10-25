@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f54039fb9da4c01bd34d54cf22fd11e, type: 3}
+  m_Name: Trabalhador
+  m_EditorClassIdentifier: Assembly-CSharp::NpcRoleData
+  displayName: Trabalhador
+  description: "Trabalha em uma instalação de produção e contribui para o mínimo e os bônus de trabalhadores."
+  workplaceKind: 0
+  requiredFacility: {fileID: 0}
+  slotsPerFacility: 100
+  providesService: 0
+  productionWorker: 1

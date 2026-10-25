@@ -78,8 +78,10 @@ public sealed class PlayerController : MonoBehaviour
         float distance = delta.magnitude;
         if (distance < 0.00001f) return true;
         Capsule(position, out Vector3 bottom, out Vector3 top);
-        return !Physics.CapsuleCast(bottom, top, radius, delta / distance, distance + Skin,
-            ObstacleMask, QueryTriggerInteraction.Ignore);
+        foreach (var hit in Physics.CapsuleCastAll(bottom, top, radius, delta / distance, distance + Skin,
+            ObstacleMask, QueryTriggerInteraction.Ignore))
+            if (BlocksPlayer(hit.collider)) return false;
+        return true;
     }
 
     public bool CanOccupy(Vector3 position)
@@ -101,7 +103,15 @@ public sealed class PlayerController : MonoBehaviour
             }
         if (OverlapsSceneStructure(position)) return false;
         Capsule(position, out Vector3 bottom, out Vector3 top);
-        return !Physics.CheckCapsule(bottom, top, radius + Skin, ObstacleMask, QueryTriggerInteraction.Ignore);
+        foreach (var hit in Physics.OverlapCapsule(bottom, top, radius + Skin, ObstacleMask, QueryTriggerInteraction.Ignore))
+            if (BlocksPlayer(hit)) return false;
+        return true;
+    }
+
+    static bool BlocksPlayer(Collider collider)
+    {
+        var structure = collider.GetComponentInParent<Structure>();
+        return structure == null || structure.BlocksMovement;
     }
 
     bool OverlapsSceneStructure(Vector3 position)
@@ -110,7 +120,7 @@ public sealed class PlayerController : MonoBehaviour
         float clearance = radius + Skin;
         foreach (var structure in Structure.All)
         {
-            if (structure == null || !structure.isActiveAndEnabled) continue;
+            if (structure == null || !structure.BlocksMovement) continue;
             var body = structure.GetComponent<Collider>();
             // Enabled colliders already use the precise physics checks above.
             if (body != null && body.enabled && !body.isTrigger) continue;

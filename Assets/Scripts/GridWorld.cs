@@ -74,8 +74,8 @@ public class GridWorld : MonoBehaviour
     public bool IsHardBlocked(Vector2Int c) => InBounds(c) && hardBlocked[c.x, c.y];
     public bool IsTankBreakableWall(Structure structure)
     {
-        return structure != null && structure.kind == StructureKind.Wall &&
-               (structure.gameObject.tag == "Muro" || structure.gameObject.tag == "Cerca");
+        return structure != null && structure.CanBeAttacked && structure.kind == StructureKind.Wall &&
+               structure.gameObject.tag == "Cerca";
     }
 
     public Vector3 CellToWorld(Vector2Int c) =>

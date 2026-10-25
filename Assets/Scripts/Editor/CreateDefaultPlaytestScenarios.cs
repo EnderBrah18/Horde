@@ -22,7 +22,7 @@ public static class CreateDefaultPlaytestScenarios
             s.instructions = "Mapa maior, com duas frentes opostas. Compare linhas de torres e corredores de paredes.";
             s.gridWidth = 31; s.gridHeight = 31;
             s.spawnEdges = SpawnEdges.North | SpawnEdges.South;
-            s.initialGroups = 2; s.maxGroups = 4;
+            s.groupsPerWave = 2; s.maxWaves = 4;
             s.baseCommonEnemies = 5; s.commonsPerRound = 1;
             s.buildGridWidth = 25; s.buildGridHeight = 25;
         });
@@ -31,12 +31,12 @@ public static class CreateDefaultPlaytestScenarios
             s.displayName = "Enxame";
             s.instructions = "Pressão alta com grupos numerosos e surgimento rápido por várias direções.";
             s.gridWidth = 31; s.gridHeight = 31;
-            s.initialGroups = 2; s.groupsPerRounds = 1; s.maxGroups = 5;
+            s.groupsPerWave = 2; s.nightsPerExtraWave = 1; s.maxWaves = 5;
             s.baseCommonEnemies = 6; s.commonsPerRound = 2;
             s.spawnInterval = 0.12f; s.groupInterval = 1f;
             s.hunterBaseChance = 0.2f; s.hunterChanceCap = 0.45f;
             s.buildGridWidth = 21; s.buildGridHeight = 21;
-            s.startWood = 80; s.startSupplies = 8;
+            s.startWood = 80; s.startCrystals = 8;
         });
         Make("CercoPesado", s =>
         {
@@ -48,7 +48,7 @@ public static class CreateDefaultPlaytestScenarios
             s.baseCommonEnemies = 3; s.commonsPerRound = 1;
             s.tankEnemy.maxHealth = 210f; s.tankEnemy.damage = 20f;
             s.buildGridWidth = 23; s.buildGridHeight = 15;
-            s.startWood = 80; s.startSupplies = 8;
+            s.startWood = 80; s.startCrystals = 8;
         });
 
         AssetDatabase.SaveAssets();

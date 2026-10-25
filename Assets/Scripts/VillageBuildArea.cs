@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Area de construção livre centrada no núcleo da vila. A área aumenta por níveis,
@@ -13,8 +14,10 @@ public sealed class VillageBuildArea : MonoBehaviour
     [Min(0)] public int maxExpansionLevel = 4;
     [Min(0)] public int baseWoodCost = 30;
     [Min(0)] public int woodCostPerLevel = 20;
-    [Min(0)] public int baseSuppliesCost = 5;
-    [Min(0)] public int suppliesCostPerLevel = 3;
+    [FormerlySerializedAs("baseSuppliesCost")]
+    [Min(0)] public int baseCrystalsCost = 5;
+    [FormerlySerializedAs("suppliesCostPerLevel")]
+    [Min(0)] public int crystalsCostPerLevel = 3;
 
     public Transform Center => center != null ? center : transform;
     public float Radius => initialRadius + radiusPerUpgrade * expansionLevel;
@@ -28,11 +31,11 @@ public sealed class VillageBuildArea : MonoBehaviour
 
     public bool CanExpand => expansionLevel < maxExpansionLevel;
     public int NextWoodCost => baseWoodCost + expansionLevel * woodCostPerLevel;
-    public int NextSuppliesCost => baseSuppliesCost + expansionLevel * suppliesCostPerLevel;
+    public int NextCrystalsCost => baseCrystalsCost + expansionLevel * crystalsCostPerLevel;
 
     public bool TryExpand(Wallet wallet)
     {
-        if (!CanExpand || wallet == null || !wallet.Spend(NextWoodCost, NextSuppliesCost))
+        if (!CanExpand || wallet == null || !wallet.Spend(NextWoodCost, NextCrystalsCost))
             return false;
 
         expansionLevel++;

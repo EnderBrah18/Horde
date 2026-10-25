@@ -6,20 +6,31 @@ using UnityEngine.InputSystem;
 public sealed class PlayerAttack : MonoBehaviour
 {
     [Header("Área do ataque (setor na direção do cursor)")]
-    [Tooltip("Distância máxima do centro do jogador ao centro do inimigo, em metros.")]
+    [Tooltip("Alcance do corte a partir do corpo, em metros. Não há distância mínima para acertar.")]
     [Min(0.1f)] public float attackRange = 4f;
     [Tooltip("Abertura total da área em graus. 360 atinge ao redor do jogador.")]
     [Range(1f, 360f)] public float attackAngle = 100f;
     [Header("Ataque")]
     [Min(0f)] public float attackDamage = 10f;
     [Min(0.01f)] public float attackCooldown = 0.4f;
+    [Header("Repulsão do ataque")]
+    [Tooltip("Distância em metros antes da resistência do inimigo.")]
+    [Min(0f)] public float knockbackDistance = 1.5f;
+    [Min(0.01f)] public float knockbackDuration = 0.2f;
     [Header("Visualização")]
-    public bool showAttackArea = true;
+    public bool showAttackArea = false;
     public Color areaColor = new Color(0.25f, 0.85f, 1f, 0.65f);
     public Color hitColor = new Color(1f, 0.85f, 0.25f, 1f);
+    [Header("Efeito de corte")]
+    [Min(0.01f)] public float slashDuration = 0.22f;
+    [Tooltip("Espessura da borda luminosa. A área de dano sempre começa no corpo.")]
+    [Min(0.01f)] public float slashWidth = 0.9f;
+    [Min(0f)] public float slashHeight = 0.9f;
+    public Color slashColor = new Color(0.8f, 0.95f, 1f, 1f);
+    bool reverseSlash;
 
     const int ArcSegments = 32;
-    readonly List<Enemy> attackTargets = new List<Enemy>();
+    readonly List<PlayerSlashEffect> activeSlashes = new List<PlayerSlashEffect>();
     Vector3 aimDirection = Vector3.forward;
     bool hasAim;
     float nextAttackTime;
@@ -48,17 +59,32 @@ public sealed class PlayerAttack : MonoBehaviour
         attackAngle = Mathf.Clamp(attackAngle, 1f, 360f);
         attackDamage = Mathf.Max(0f, attackDamage);
         attackCooldown = Mathf.Max(0.01f, attackCooldown);
+        knockbackDistance = Mathf.Max(0f, knockbackDistance);
+        knockbackDuration = Mathf.Max(0.01f, knockbackDuration);
+        slashDuration = Mathf.Max(0.01f, slashDuration);
+        slashWidth = Mathf.Max(0.01f, slashWidth);
+        slashHeight = Mathf.Max(0f, slashHeight);
     }
 
     void LateUpdate()
     {
         bool active = Game.I != null && Game.I.PlayerControlEnabled;
-        hasAim = active && TryAim();
+        hasAim = active && !Game.I.BlocksPlayerAttack && TryAim();
         if (hasAim)
         {
             transform.rotation = Quaternion.LookRotation(aimDirection);
             if (Mouse.current.leftButton.wasPressedThisFrame && Time.time >= nextAttackTime)
                 Attack();
+        }
+        for (int i = activeSlashes.Count - 1; i >= 0; i--)
+        {
+            var slash = activeSlashes[i];
+            if (slash == null) { activeSlashes.RemoveAt(i); continue; }
+            if (!active || !slash.Tick(Time.deltaTime, SlashOrigin(), aimDirection))
+            {
+                Destroy(slash.gameObject);
+                activeSlashes.RemoveAt(i);
+            }
         }
         if (area == null) return;
         area.enabled = hasAim && showAttackArea;
@@ -94,18 +120,18 @@ public sealed class PlayerAttack : MonoBehaviour
     {
         nextAttackTime = Time.time + attackCooldown;
         flashUntil = Time.time + 0.12f;
-        // Enemy primitives have no colliders. Use the registry, and snapshot it
-        // because damage/death listeners can remove enemies during the attack.
-        attackTargets.Clear();
-        attackTargets.AddRange(Enemy.All);
-        foreach (var enemy in attackTargets)
-        {
-            if (enemy == null || !enemy.isActiveAndEnabled || enemy.hp == null || enemy.hp.current <= 0f) continue;
-            Vector3 delta = enemy.transform.position - transform.position;
-            delta.y = 0f;
-            if (ContainsOffset(delta, aimDirection, attackRange, attackAngle))
-                enemy.hp.Damage(attackDamage, gameObject);
-        }
+        var slash = new GameObject("PlayerSlash").AddComponent<PlayerSlashEffect>();
+        slash.Initialize(SlashOrigin(), aimDirection, attackRange, attackAngle, slashWidth, slashDuration,
+            slashColor, reverseSlash, gameObject, attackDamage, knockbackDistance, knockbackDuration);
+        activeSlashes.Add(slash);
+        reverseSlash = !reverseSlash;
+    }
+
+    Vector3 SlashOrigin()
+    {
+        Vector3 origin = AreaOrigin();
+        origin.y += slashHeight - 0.15f;
+        return origin;
     }
 
     public static bool ContainsOffset(Vector3 offset, Vector3 direction, float range, float angle)
@@ -142,6 +168,12 @@ public sealed class PlayerAttack : MonoBehaviour
         Gizmos.DrawLine(previous, origin);
     }
 
-    void OnDisable() { if (area != null) area.enabled = false; }
+    void OnDisable()
+    {
+        if (area != null) area.enabled = false;
+        foreach (var slash in activeSlashes)
+            if (slash != null) Destroy(slash.gameObject);
+        activeSlashes.Clear();
+    }
     void OnDestroy() { if (areaMaterial != null) Destroy(areaMaterial); }
 }

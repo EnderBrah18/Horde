@@ -38,4 +38,11 @@ public sealed class PlayerVitals : MonoBehaviour
     {
         if (Game.I != null) Game.I.PlayerDied();
     }
+
+    public void RestoreAtDawn()
+    {
+        if (!IsAlive) return;
+        Health.RestoreFull();
+        vulnerableAt = 0f;
+    }
 }

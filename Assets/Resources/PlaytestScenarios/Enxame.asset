@@ -25,11 +25,14 @@ MonoBehaviour:
   buildGridHeight: 21
   buildGridOffset: {x: 0, y: 0}
   startWood: 80
-  startSupplies: 8
+  startCrystals: 8
   coreHealth: 300
-  initialGroups: 2
-  groupsPerRounds: 1
-  maxGroups: 5
+
+  groupsPerWave: 2
+  initialWaves: 3
+  waveInterval: 5
+  nightsPerExtraWave: 1
+  maxWaves: 5
   baseCommonEnemies: 6
   commonsPerRound: 2
   tankEveryRounds: 2
@@ -39,6 +42,7 @@ MonoBehaviour:
   spawnInterval: 0.12
   groupInterval: 1
   commonEnemy:
+    knockbackResistance: 0.1
     maxHealth: 25
     speed: 3.2
     damage: 4
@@ -47,6 +51,7 @@ MonoBehaviour:
     tacticRadius: 16
     scale: {x: 0.9, y: 0.9, z: 0.9}
   tankEnemy:
+    knockbackResistance: 0.8
     maxHealth: 140
     speed: 2.2
     damage: 14

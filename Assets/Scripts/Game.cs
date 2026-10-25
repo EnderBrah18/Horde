@@ -4,9 +4,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Unity.Cinemachine;
+using UnityEngine.Serialization;
 
 // Coloque este script em UM GameObject vazio na cena. Ele cria todo o resto.
-public class Game : MonoBehaviour
+public partial class Game : MonoBehaviour
 {
     public static Game I;
 
@@ -16,11 +17,11 @@ public class Game : MonoBehaviour
 
     [Header("Recursos iniciais")]
     public int startWood = 60;
-    public int startSupplies = 6;
+    [FormerlySerializedAs("startSupplies")] public int startCrystals = 6;
 
     [Header("Amanhecer (temporário, até os círculos mágicos)")]
     public int dawnWood = 10;
-    public int dawnSuppliesBase = 3;
+    [FormerlySerializedAs("dawnSuppliesBase")] public int dawnCrystalsBase = 3;
 
     [Header("Mapa de playtest")]
     [Range(11, 301)] public int gridWidth = 21;
@@ -45,7 +46,7 @@ public class Game : MonoBehaviour
     [Min(1f)] public float cameraEdgeSize = 28f;
     [Tooltip("Opcional. Se vazio, o modo combate procura um objeto com a tag Player.")]
     public Transform combatCameraTarget;
-    public bool PlayerControlEnabled => combatCameraMode && !lost;
+    public bool PlayerControlEnabled => combatCameraMode && !lost && !expeditionTransition;
     [Min(0.1f)] public float combatCameraFollowSpeed = 8f;
     [Min(1f)] public float buildCameraZoomSpeed = 10f;
     [Min(1f)] public float buildCameraMinZoom = 15f;
@@ -65,6 +66,7 @@ public class Game : MonoBehaviour
     public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
     {
         maxHealth = 140f,
+        knockbackResistance = 0.8f,
         speed = 2.2f,
         damage = 14f,
         tacticRadius = 100f,
@@ -72,10 +74,15 @@ public class Game : MonoBehaviour
     };
 
     [Header("Balanceamento das noites")]
-    [Min(0)] public int initialGroups = 1;
-    [Min(0)] public int groupsPerRounds = 2;
-    [Min(1)] public int maxGroups = 4;
+    [Tooltip("Grupos que surgem dentro de cada leva. A próxima leva espera todos serem resolvidos.")]
+    [FormerlySerializedAs("initialGroups"), Min(1)] public int groupsPerWave = 3;
+    [Min(1)] public int initialWaves = 3;
+    [FormerlySerializedAs("groupsPerRounds"), Min(1)] public int nightsPerExtraWave = 2;
+    [FormerlySerializedAs("maxGroups"), Min(1)] public int maxWaves = 5;
+    [Tooltip("Pausa depois de resolver uma leva, antes de começar a próxima.")]
+    [Min(0f)] public float waveInterval = 5f;
     [Min(0)] public int baseCommonEnemies = 4;
+    [Tooltip("Bônus fixo por grupo da primeira noite. Depois dela o total é decidido pelo Night Director.")]
     [Min(0)] public int commonsPerRound = 1;
     [Min(1)] public int tankEveryRounds = 2;
     [Range(0f, 1f)] public float hunterBaseChance = 0.3f;
@@ -93,7 +100,12 @@ public class Game : MonoBehaviour
     public bool varyFanaticBraveryForTesting = true;
 
     [Header("Estado (somente leitura)")]
-    public int round;
+    [FormerlySerializedAs("round"), SerializeField] int nightsStarted;
+    // Compatibility for economy/refund consumers: this is a night ID, never a wave.
+    public int round => nightsStarted;
+    public int Day => VillageProgressionRules.DayNumber(nightsStarted, night, lost);
+    public int CurrentWave { get; private set; }
+    public int TotalWaves { get; private set; }
     public int killed;
     public int deserted;
     public bool night;
@@ -107,12 +119,14 @@ public class Game : MonoBehaviour
         lost = true;
     }
 
-    public Wallet wallet = new Wallet();
+    // Runtime balances use a dictionary, which Unity does not serialize.
+    [System.NonSerialized] public Wallet wallet = new Wallet();
     public Structure core;
 
     public event System.Action<GameplayEvent> GameplayEventRaised;
 
     static string selectedScenarioName;
+    public static void PrepareNewRun() { selectedScenarioName = null; }
     readonly List<PlaytestScenario> scenarios = new List<PlaytestScenario>();
     readonly List<GameplayEvent> recentEvents = new List<GameplayEvent>();
     bool scenarioChangePending;
@@ -120,9 +134,9 @@ public class Game : MonoBehaviour
     void OnValidate()
     {
         startWood = Mathf.Max(0, startWood);
-        startSupplies = Mathf.Max(0, startSupplies);
+        startCrystals = Mathf.Max(0, startCrystals);
         dawnWood = Mathf.Max(0, dawnWood);
-        dawnSuppliesBase = Mathf.Max(0, dawnSuppliesBase);
+        dawnCrystalsBase = Mathf.Max(0, dawnCrystalsBase);
         maxGridDimension = Mathf.Clamp(maxGridDimension, 21, 301);
         gridWidth = Mathf.Clamp(gridWidth, 11, maxGridDimension);
         gridHeight = Mathf.Clamp(gridHeight, 11, maxGridDimension);
@@ -143,9 +157,11 @@ public class Game : MonoBehaviour
         buildPlacementStep = Mathf.Max(0.1f, buildPlacementStep);
         coreHealth = Mathf.Max(1f, coreHealth);
         eventLogEntries = Mathf.Max(1, eventLogEntries);
-        initialGroups = Mathf.Max(0, initialGroups);
-        groupsPerRounds = Mathf.Max(1, groupsPerRounds);
-        maxGroups = Mathf.Max(1, maxGroups);
+        groupsPerWave = Mathf.Max(1, groupsPerWave);
+        initialWaves = Mathf.Max(1, initialWaves);
+        waveInterval = Mathf.Max(0f, waveInterval);
+        nightsPerExtraWave = Mathf.Max(1, nightsPerExtraWave);
+        maxWaves = Mathf.Max(1, maxWaves);
         baseCommonEnemies = Mathf.Max(0, baseCommonEnemies);
         commonsPerRound = Mathf.Max(0, commonsPerRound);
         tankEveryRounds = Mathf.Max(1, tankEveryRounds);
@@ -171,6 +187,7 @@ public class Game : MonoBehaviour
         settings.attackCooldown = Mathf.Max(0.01f, settings.attackCooldown);
         settings.attackRange = Mathf.Max(0f, settings.attackRange);
         settings.tacticRadius = Mathf.Max(0f, settings.tacticRadius);
+        settings.knockbackResistance = Mathf.Clamp01(settings.knockbackResistance);
         settings.scale = new Vector3(Mathf.Max(0.1f, settings.scale.x), Mathf.Max(0.1f, settings.scale.y), Mathf.Max(0.1f, settings.scale.z));
     }
 
@@ -185,7 +202,7 @@ public class Game : MonoBehaviour
     List<BuildingData> menu = new List<BuildingData>();
     readonly List<BuildingData> activeMenu = new List<BuildingData>();
     readonly List<BuildingMenuCategory> menuCategories = new List<BuildingMenuCategory>();
-    int selected;
+    int selected = -1;
     BuildingMenuCategory activeMenuCategory = BuildingMenuCategory.Automatic;
     int menuPage;
     GameObject cursor;
@@ -221,6 +238,7 @@ public class Game : MonoBehaviour
     void Awake()
     {
         I = this;
+        if (GetComponent<VillagePopulation>() == null) gameObject.AddComponent<VillagePopulation>();
         virtualCamera = FindAnyObjectByType<CinemachineCamera>();
         baseMat = litMaterial;
         LineMat = lineMaterial;
@@ -239,10 +257,10 @@ public class Game : MonoBehaviour
         if (scenario != null) scenario.ApplyTo(this);
 
         wallet.Wood = startWood;
-        wallet.Supplies = startSupplies;
+        wallet.Crystals = startCrystals;
 
         menu = new List<BuildingData>(Resources.LoadAll<BuildingData>("Buildings"));
-        menu.RemoveAll(b => b.kind == StructureKind.Core);
+        menu.RemoveAll(building => !building.showInBuildMenu);
         menu.Sort((a, b) => a.order.CompareTo(b.order));
         if (menu.Count == 0)
             Say("Nenhuma construção encontrada. Rode: Tools > Village > Create Default Buildings", 600f);
@@ -266,6 +284,7 @@ public class Game : MonoBehaviour
         var existingPlayer = GameObject.FindGameObjectWithTag("Player");
         if (combatCameraTarget == null && existingPlayer != null)
             combatCameraTarget = existingPlayer.transform;
+        PrepareExpeditions();
     }
 
     void BuildSceneWorld()
@@ -302,11 +321,11 @@ public class Game : MonoBehaviour
                 RaiseGameplayEvent(GameplayEventType.CoreDestroyed, coreObject, 0f, "O núcleo da vila foi destruído");
             };
         }
-        RegisterTaggedStructures("ProducaoPassiva", StructureKind.Producer, registered);
-        RegisterTaggedStructures("ProducaoAtiva", StructureKind.Producer, registered);
-        RegisterTaggedStructures("ConstrucaoProdutiva", StructureKind.Producer, registered);
-        RegisterTaggedStructures("ConstrucaoServico", StructureKind.Producer, registered);
-        RegisterTaggedStructures("Moradia", StructureKind.Producer, registered);
+        RegisterTaggedStructures("ProducaoPassiva", StructureKind.Facility, registered);
+        RegisterTaggedStructures("ProducaoAtiva", StructureKind.Facility, registered);
+        RegisterTaggedStructures("ConstrucaoProdutiva", StructureKind.Facility, registered);
+        RegisterTaggedStructures("ConstrucaoServico", StructureKind.Facility, registered);
+        RegisterTaggedStructures("Moradia", StructureKind.Facility, registered);
         RegisterTaggedStructures("ConstrucaoDefensiva", StructureKind.Tower, registered);
         RegisterTaggedStructures("Muro", StructureKind.Wall, registered);
         RegisterTaggedStructures("Cerca", StructureKind.Wall, registered);
@@ -406,7 +425,8 @@ public class Game : MonoBehaviour
         foreach (var go in GameObject.FindGameObjectsWithTag(tag))
         {
             if (go == null || registered.Contains(go)) continue;
-            RegisterSceneStructure(go, kind, 120f);
+            var facility = go.GetComponent<VillageFacility>();
+            RegisterSceneStructure(go, kind, facility != null && facility.data != null ? facility.data.maxHealth : 120f);
             registered.Add(go);
         }
     }
@@ -424,10 +444,19 @@ public class Game : MonoBehaviour
         structure.health = health;
         if (!TryGetStructureBounds(go, out Bounds bounds))
             bounds = new Bounds(go.transform.position, go.transform.lossyScale);
-        grid.SetFootprint(structure, bounds);
+        structure.indestructible = go.CompareTag("Muro") || go.CompareTag("Destrocos");
+        structure.blocksMovement = !go.CompareTag("Destrocos");
+        health.invulnerable = structure.indestructible;
+        var facility = go.GetComponent<VillageFacility>();
+        if (facility != null) facility.BindStructure(structure);
+        else if (structure.BlocksMovement) grid.SetFootprint(structure, bounds);
+        if (go.CompareTag("Muro")) grid.SetHardBlocked(bounds, true);
         health.Damaged += (h, amount) => RaiseGameplayEvent(GameplayEventType.StructureAttacked, go, amount,
             $"{go.name} recebeu {amount:0.#} dano ({h.current:0.#}/{h.max:0.#} vida)");
-        health.Died += _ => RaiseGameplayEvent(GameplayEventType.StructureDestroyed, go, 0f, $"{go.name} foi destruída");
+        health.Died += _ =>
+        {
+            if (facility == null) RaiseGameplayEvent(GameplayEventType.StructureDestroyed, go, 0f, $"{go.name} foi destruída");
+        };
         return structure;
     }
 
@@ -484,16 +513,19 @@ public class Game : MonoBehaviour
 
         DrawBuildGridBoundary();
 
-        // Coração (dados criados em código; não aparece no menu)
-        var cd = ScriptableObject.CreateInstance<BuildingData>();
-        cd.displayName = "Coração";
-        cd.kind = StructureKind.Core;
-        cd.shape = PrimitiveType.Cube;
-        cd.color = new Color(0.2f, 0.4f, 1f);
-        cd.size = new Vector3(0.9f, 1.8f, 0.9f);
-        cd.maxHealth = coreHealth;
-        core = MakeStructure(cd, grid.CoreCell);
-        core.health.Died += _ => lost = true;
+        // O núcleo é um objetivo do mapa, não uma construção posicionável.
+        var coreObject = Prim(PrimitiveType.Cube, grid.CellToWorld(grid.CoreCell) + Vector3.up * 0.9f,
+            new Vector3(0.9f * cs, 1.8f, 0.9f * cs), new Color(0.2f, 0.4f, 1f));
+        coreObject.name = "Coração";
+        coreObject.tag = "Nucleo";
+        coreObject.layer = LayerMask.NameToLayer("Structures");
+        coreObject.AddComponent<BoxCollider>();
+        core = RegisterSceneStructure(coreObject, StructureKind.Core, coreHealth);
+        core.health.Died += _ =>
+        {
+            lost = true;
+            RaiseGameplayEvent(GameplayEventType.CoreDestroyed, coreObject, 0f, "O Coração foi destruído");
+        };
 
         // Cursor de construção
         cursor = Prim(PrimitiveType.Cube, Vector3.zero, new Vector3(cs * 0.95f, 0.1f, cs * 0.95f), Color.green);
@@ -521,37 +553,24 @@ public class Game : MonoBehaviour
         // Player-built walls are fences, separate from the ancient wall ring in the scene.
         go.layer = LayerMask.NameToLayer("Structures");
         go.AddComponent<BoxCollider>();
-        if (d.kind == StructureKind.Core) go.tag = "Nucleo";
-        else if (d.kind == StructureKind.Wall) go.tag = "Cerca";
-        else if (d.kind == StructureKind.Tower) go.tag = "ConstrucaoDefensiva";
-        else if (d.productionMode == ProductionMode.Active) go.tag = "ProducaoAtiva";
-        else if (d.productionMode == ProductionMode.Passive || d.amount > 0) go.tag = "ProducaoPassiva";
-        else go.tag = "ConstrucaoProdutiva";
+        go.tag = d.kind == BuildingKind.Wall ? "Cerca" : "ConstrucaoDefensiva";
 
-        if (d.kind == StructureKind.Tower) go.AddComponent<Tower>().Setup(d);
-        if (d.amount > 0)
-        {
-            var pr = go.AddComponent<Producer>();
-            pr.Setup(d);
-        }
+        if (d.kind == BuildingKind.Tower) go.AddComponent<Tower>().Setup(d);
 
         var h = go.AddComponent<Health>();
         h.Setup(d.maxHealth);
         var s = go.AddComponent<Structure>();
-        s.kind = d.kind;
+        s.kind = d.RuntimeKind;
         s.cell = grid.WorldToCell(groundPosition);
         s.health = h;
         s.data = d;
+        s.investedCosts = d.costs != null ? (ResourceAmount[])d.costs.Clone() : new ResourceAmount[0];
+        s.placementRound = round;
         h.Damaged += (health, amount) => RaiseGameplayEvent(GameplayEventType.StructureAttacked, go, amount,
             $"{d.displayName} recebeu {amount:0.#} dano ({health.current:0.#}/{health.max:0.#} vida)");
         h.Died += _ =>
         {
             RaiseGameplayEvent(GameplayEventType.StructureDestroyed, go, 0f, $"{d.displayName} foi destruída");
-            if (d.kind == StructureKind.Core)
-            {
-                RaiseGameplayEvent(GameplayEventType.CoreDestroyed, go, 0f, "O Coração foi destruído");
-                lost = true;
-            }
         };
         var collider = go.GetComponent<Collider>();
         grid.SetFootprint(s, collider.bounds);
@@ -563,10 +582,7 @@ public class Game : MonoBehaviour
     BuildingMenuCategory ResolveMenuCategory(BuildingData building)
     {
         if (building.menuCategory != BuildingMenuCategory.Automatic) return building.menuCategory;
-        if (building.kind == StructureKind.Wall || building.kind == StructureKind.Tower) return BuildingMenuCategory.Defense;
-        if (building.kind == StructureKind.Producer && building.amount > 0) return BuildingMenuCategory.Production;
-        if (building.kind == StructureKind.Producer) return BuildingMenuCategory.Services;
-        return BuildingMenuCategory.Other;
+        return building.kind == BuildingKind.Wall ? BuildingMenuCategory.Defense : BuildingMenuCategory.Offense;
     }
 
     string MenuCategoryLabel(BuildingMenuCategory category)
@@ -574,11 +590,7 @@ public class Game : MonoBehaviour
         switch (category)
         {
             case BuildingMenuCategory.Defense: return "Defesas";
-            case BuildingMenuCategory.Production: return "Produção";
-            case BuildingMenuCategory.Services: return "Serviços";
-            case BuildingMenuCategory.Housing: return "Moradia";
-            case BuildingMenuCategory.Utility: return "Utilidades";
-            default: return "Outros";
+            default: return "Ofensivas";
         }
     }
 
@@ -587,8 +599,7 @@ public class Game : MonoBehaviour
         menuCategories.Clear();
         BuildingMenuCategory[] order =
         {
-            BuildingMenuCategory.Defense, BuildingMenuCategory.Production, BuildingMenuCategory.Services,
-            BuildingMenuCategory.Housing, BuildingMenuCategory.Utility, BuildingMenuCategory.Other
+            BuildingMenuCategory.Defense, BuildingMenuCategory.Offense
         };
         foreach (var category in order)
         {
@@ -608,7 +619,8 @@ public class Game : MonoBehaviour
         activeMenu.Clear();
         for (int i = 0; i < menu.Count; i++)
             if (ResolveMenuCategory(menu[i]) == category) activeMenu.Add(menu[i]);
-        selected = 0;
+        selected = -1;
+        CloseInteraction();
         menuPage = 0;
     }
 
@@ -649,11 +661,19 @@ public class Game : MonoBehaviour
         if (kb == null || mouse == null) return;
 
         if (kb.rKey.wasPressedThisFrame)
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        { SceneManager.LoadScene(gameObject.scene.name); return; }
+
+        if (expeditionTransition) return;
+        if (IsOnExpedition)
+        {
+            UpdateExpeditionInput(kb, mouse);
+            return;
+        }
 
         if (kb.f3Key.wasPressedThisFrame) showEventLog = !showEventLog;
         if (kb.f1Key.wasPressedThisFrame) SelectNextScenario();
-        if (kb.tabKey.wasPressedThisFrame) combatCameraMode = !combatCameraMode;
+        if (kb.tabKey.wasPressedThisFrame) { combatCameraMode = !combatCameraMode; CloseInteraction(); }
+        if (kb.escapeKey.wasPressedThisFrame || kb.digit0Key.wasPressedThisFrame) EmptyHand();
         if (sceneDrivenLayout && kb.cKey.wasPressedThisFrame && core != null)
             CenterCameraOn(core.transform.position);
 
@@ -661,12 +681,12 @@ public class Game : MonoBehaviour
         RefreshBuildAreaOutline();
         menuPage = Mathf.Clamp(menuPage, 0, Mathf.Max(0, (activeMenu.Count - 1) / CardsPerPage));
 
-        if (lost) { cursor.SetActive(false); return; }
+        if (lost) { cursor.SetActive(false); CloseInteraction(); return; }
 
         for (int i = 0; i < VisibleMenuCount && i < 9; i++)
-            if (kb[Key.Digit1 + i].wasPressedThisFrame) selected = VisibleMenuStart + i;
+            if (IsConstructionMode && kb[Key.Digit1 + i].wasPressedThisFrame) EquipBuilding(VisibleMenuStart + i);
 
-        if (sceneDrivenLayout && !night && !combatCameraMode)
+        if (sceneDrivenLayout && IsConstructionMode && Current != null)
         {
             float rotationStep = kb.leftAltKey.isPressed || kb.rightAltKey.isPressed ? 1f
                 : kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed ? 15f : 5f;
@@ -675,28 +695,29 @@ public class Game : MonoBehaviour
             if (kb.gKey.wasPressedThisFrame) snapBuildPosition = !snapBuildPosition;
         }
 
-        if (kb.spaceKey.wasPressedThisFrame && !night) StartCoroutine(RunNight());
+        if (kb.spaceKey.wasPressedThisFrame && !night && !InteractionOpen) StartCoroutine(RunNight());
 
         Vector2 gm = GuiMouse(mouse);
-        bool overMenu = MenuArea().Contains(gm) ||
-            (sceneDrivenLayout && new Rect(0f, 76f, 300f, 70f).Contains(gm));
+        bool overMenu = PointerOverGameplayUI(gm);
+        if (overMenu && mouse.leftButton.wasPressedThisFrame) blockedAttackFrame = Time.frameCount;
 
-        if (overMenu && mouse.leftButton.wasPressedThisFrame)
+        if (IsConstructionMode && overMenu && mouse.leftButton.wasPressedThisFrame)
         {
             int c = CardAt(gm);
-            if (c >= 0) selected = c;
+            if (c >= 0) EquipBuilding(c);
         }
 
         UpdateHover(mouse, overMenu);
+        UpdateInteraction(kb, mouse, overMenu);
 
         if (!night && !combatCameraMode && !overMenu)
         {
-            if (mouse.leftButton.wasPressedThisFrame) TryBuild();
-            if (mouse.rightButton.wasPressedThisFrame) TrySell();
+            if (mouse.leftButton.wasPressedThisFrame && Current != null) TryBuild();
+            if (mouse.rightButton.wasPressedThisFrame) EmptyHand();
         }
     }
 
-    BuildingData Current => (activeMenu.Count > 0 && selected < activeMenu.Count) ? activeMenu[selected] : null;
+    BuildingData Current => (selected >= 0 && selected < activeMenu.Count) ? activeMenu[selected] : null;
 
     bool CellFree(Vector2Int c)
     {
@@ -781,6 +802,7 @@ public class Game : MonoBehaviour
             }
         }
 
+        if (PointerOverGameplayUI(GuiMouse(mouse))) { draggingBuildCamera = false; return; }
         Vector2 pointer = mouse.position.ReadValue();
         float x = pointer.x <= cameraEdgeSize ? -1f : (pointer.x >= Screen.width - cameraEdgeSize ? 1f : 0f);
         float y = pointer.y <= cameraEdgeSize ? -1f : (pointer.y >= Screen.height - cameraEdgeSize ? 1f : 0f);
@@ -903,7 +925,7 @@ public class Game : MonoBehaviour
                 var cur = Current;
                 SpecialBuildPoint slot;
                 bool placeable = CanPlace(cur, hoverPosition, out slot);
-                bool ok = placeable && wallet.CanAfford(cur.woodCost, cur.suppliesCost);
+                bool ok = placeable && wallet.CanAfford(cur.costs);
                 Vector3 previewPosition = slot != null ? slot.transform.position : hoverPosition;
                 if (!sceneDrivenLayout) previewPosition = grid.CellToWorld(hoverCell);
                 cursor.transform.position = previewPosition + Vector3.up * 0.06f;
@@ -930,7 +952,7 @@ public class Game : MonoBehaviour
         if (d == null) return;
         SpecialBuildPoint slot;
         if (!CanPlace(d, hoverPosition, out slot)) { Say("Não dá para construir aqui."); return; }
-        if (!wallet.Spend(d.woodCost, d.suppliesCost)) { Say("Recursos insuficientes."); return; }
+        if (!wallet.Spend(d.costs)) { Say("Recursos insuficientes."); return; }
 
         if (sceneDrivenLayout)
         {
@@ -946,13 +968,13 @@ public class Game : MonoBehaviour
         grid.Recalc();
     }
 
-    bool CanPlace(BuildingData data, Vector3 position, out SpecialBuildPoint matchedSlot)
+    bool CanPlace(BuildingData data, Vector3 position, out SpecialBuildPoint matchedSlot, Structure ignored = null)
     {
         matchedSlot = null;
         if (!sceneDrivenLayout)
         {
             Vector2Int cell = grid.WorldToCell(position);
-            if (!CellFree(cell) || data == null) return false;
+            if (data == null || (!CellFree(cell) && (ignored == null || grid.Get(cell) != ignored))) return false;
             Vector3 center = grid.CellToWorld(cell) + Vector3.up;
             Vector3 half = new Vector3(data.size.x * grid.cellSize * 0.5f, 2f,
                 data.size.z * grid.cellSize * 0.5f);
@@ -969,7 +991,7 @@ public class Game : MonoBehaviour
             float bestDistance = float.MaxValue;
             foreach (var point in specialBuildPoints)
             {
-                if (point == null || point.occupied || point.requiredBuildingId != data.specialBuildPointId) continue;
+                if (point == null || (point.occupied && point.occupant != ignored) || point.requiredBuildingId != data.specialBuildPointId) continue;
                 Vector2 delta = new Vector2(position.x - point.transform.position.x, position.z - point.transform.position.z);
                 if (delta.magnitude > point.activationRadius || delta.magnitude >= bestDistance) continue;
                 bestDistance = delta.magnitude;
@@ -988,10 +1010,12 @@ public class Game : MonoBehaviour
         Quaternion rotation = Quaternion.Euler(0f, buildRotation, 0f);
         Physics.SyncTransforms();
         var hits = Physics.OverlapBox(boxCenter, halfExtents, rotation, solidMask, QueryTriggerInteraction.Collide);
-        return hits.Length == 0 && !OverlapsExistingStructure(candidate, width, height, depth, rotation);
+        foreach (var hit in hits)
+            if (ignored == null || hit.GetComponentInParent<Structure>() != ignored) return false;
+        return !OverlapsExistingStructure(candidate, width, height, depth, rotation, ignored);
     }
 
-    bool OverlapsExistingStructure(Vector3 candidate, float width, float height, float depth, Quaternion rotation)
+    bool OverlapsExistingStructure(Vector3 candidate, float width, float height, float depth, Quaternion rotation, Structure ignored = null)
     {
         Vector3 candidateRight3 = rotation * Vector3.right;
         Vector3 candidateForward3 = rotation * Vector3.forward;
@@ -1003,7 +1027,7 @@ public class Game : MonoBehaviour
 
         foreach (var structure in Structure.All)
         {
-            if (structure == null) continue;
+            if (structure == null || structure == ignored) continue;
             if (!TryGetStructureBounds(structure.gameObject, out Bounds bounds)) continue;
             if (bounds.max.y <= candidate.y + 0.01f || bounds.min.y >= candidateTop - 0.01f) continue;
 
@@ -1024,15 +1048,6 @@ public class Game : MonoBehaviour
             if (!separated) return true;
         }
         return false;
-    }
-
-    void TrySell()
-    {
-        var s = grid.Get(hoverCell);
-        if (s == null || s.kind == StructureKind.Core || s.data == null) return;
-        wallet.Wood += Mathf.RoundToInt(s.data.woodCost * 0.7f);
-        wallet.Supplies += Mathf.RoundToInt(s.data.suppliesCost * 0.7f);
-        Destroy(s.gameObject);   // OnDestroy limpa a célula e recalcula o campo de fluxo
     }
 
     void Say(string t, float seconds = 2.5f) { msg = t; msgTimer = seconds; }
@@ -1065,63 +1080,84 @@ public class Game : MonoBehaviour
     // ---------- Noite ----------
     IEnumerator RunNight()
     {
-        if (night || lost) yield break;
+        if (night || lost || IsOnExpedition || expeditionTransition) yield break;
+        if (spawns.Count == 0) { Say("Não há pontos de spawn configurados para esta noite."); yield break; }
+
+        NightPlan nightPlan = null;
+        try { nightPlan = PlanNight(round + 1); }
+        catch (System.Exception exception) { Debug.LogException(exception); Say("Não foi possível preparar a composição desta noite."); }
+        if (nightPlan == null) yield break;
 
         night = true;
         combatCameraMode = true;
-        round++;
-        RaiseGameplayEvent(GameplayEventType.NightStarted, null, round, $"Noite {round} começou");
-        int groups = Mathf.Min(initialGroups + (round - 1) / Mathf.Max(1, groupsPerRounds), maxGroups);
-        int commons = baseCommonEnemies + round * commonsPerRound;
-        bool tank = round % Mathf.Max(1, tankEveryRounds) == 0;
-
-        for (int g = 0; g < groups; g++)
-        {
-            if (lost) break;
-            var cell = spawns[Random.Range(0, spawns.Count)];
-            yield return SpawnGroup(cell, commons, tank);
-            if (lost) break;
-
-            float groupDelay = 0f;
-            while (!lost && groupDelay < groupInterval)
-            {
-                groupDelay += Time.deltaTime;
-                yield return null;
-            }
-        }
+        nightsStarted++;
+        CloseInteraction();
+        TotalWaves = nightPlan.waves;
+        PlannedNightEnemies = nightPlan.total;
+        SpawnedThisNight = 0;
+        CurrentWave = 0;
+        RaiseGameplayEvent(GameplayEventType.NightStarted, null, round,
+            $"Noite do Dia {Day} começou • {TotalWaves} levas • {PlannedNightEnemies} inimigos • mínimo {CurrentNightMinimum}");
 
         bool endedByDesertion = false;
-        while (!lost && Enemy.All.Count > 0)
+        var waves = new NightWaveSequence(TotalWaves, nightPlan.groupsPerWave);
+        while (!lost)
         {
-            if (AllRemainingEnemiesAreDeserters())
+            CurrentWave = waves.CurrentWave;
+            RaiseGameplayEvent(GameplayEventType.WaveStarted, null, CurrentWave,
+                $"Dia {Day} • leva {CurrentWave}/{TotalWaves} • {waves.GroupsPerWave} grupos");
+            for (int group = 0; group < waves.GroupsPerWave && !lost; group++)
             {
-                endedByDesertion = true;
-                break;
+                var cell = spawns[Random.Range(0, spawns.Count)];
+                yield return SpawnGroup(cell, nightPlan.groups[(CurrentWave - 1) * waves.GroupsPerWave + group]);
+                if (lost) break;
+                waves.RecordGroupSpawned();
+                if (group + 1 < waves.GroupsPerWave)
+                {
+                    float delay = 0f;
+                    while (!lost && delay < groupInterval)
+                    { delay += Time.deltaTime; yield return null; }
+                }
             }
-            yield return null;
-        }
-
-        if (endedByDesertion)
-        {
-            foreach (var enemy in new List<Enemy>(Enemy.All))
-                if (enemy != null && enemy.state == EState.Flee) Destroy(enemy.gameObject);
-            yield return null;
+            // A wave is resolved only after its entire spawn schedule and its
+            // surviving enemies are gone. Group spacing never advances waves.
+            while (!lost && Enemy.All.Count > 0)
+            {
+                if (AllRemainingEnemiesAreDeserters())
+                {
+                    endedByDesertion = true;
+                    foreach (var enemy in new List<Enemy>(Enemy.All))
+                        if (enemy != null && enemy.state == EState.Flee) Destroy(enemy.gameObject);
+                    yield return null;
+                    continue;
+                }
+                yield return null;
+            }
+            if (lost || waves.CanFinishNight(Enemy.All.Count)) break;
+            float waveDelay = 0f;
+            while (!lost && waveDelay < waveInterval)
+            { waveDelay += Time.deltaTime; yield return null; }
+            while (!lost && !waves.TryAdvance(Enemy.All.Count)) yield return null;
         }
 
         night = false;
         combatCameraMode = false;
         if (lost) yield break;
 
-        int sup = dawnSuppliesBase + round;
-        wallet.Add(ResourceType.Wood, dawnWood);
-        wallet.Add(ResourceType.Supplies, sup);
+        nightPopulation.RecordCompleted(round, SpawnedThisNight);
+        if (core != null && core.health != null) core.health.RestoreFull();
+        if (PlayerVitals.I != null) PlayerVitals.I.RestoreAtDawn();
+        int crystals = dawnCrystalsBase + round;
+        wallet.Add(DefaultResources.Wood, dawnWood);
+        wallet.Add(DefaultResources.Crystals, crystals);
         string dawnDetails = endedByDesertion
             ? $"Amanheceu após a deserção dos inimigos restantes na noite {round}"
             : $"Amanheceu após a noite {round}";
         RaiseGameplayEvent(GameplayEventType.DawnReached, null, round, dawnDetails);
         Say(endedByDesertion
-            ? $"Os inimigos restantes fugiram. Amanheceu! +{sup} Suprimentos e +{dawnWood} Madeira."
-            : $"Amanheceu! Chegaram +{sup} Suprimentos e +{dawnWood} Madeira. Construa e aperte Espaço.", 5f);
+            ? $"Os inimigos restantes fugiram. Amanheceu! +{crystals} {DefaultResources.Crystals.displayName} e +{dawnWood} {DefaultResources.Wood.displayName}."
+            : $"Amanheceu! Chegaram +{crystals} {DefaultResources.Crystals.displayName} e +{dawnWood} {DefaultResources.Wood.displayName}. Construa e aperte Espaço.", 5f);
+        DiscoverExpeditions();
     }
 
     bool AllRemainingEnemiesAreDeserters()
@@ -1136,35 +1172,32 @@ public class Game : MonoBehaviour
         return foundEnemy;
     }
 
-    IEnumerator SpawnGroup(Vector2Int cell, int commons, bool tank)
+    IEnumerator SpawnGroup(Vector2Int cell, NightGroupPlan plan)
     {
-        var gp = new GameObject("Group").AddComponent<EnemyGroup>();
-        gp.minSize = groupMinSize;
-        gp.loneWolfChance = loneWolfChance;
+        var gp = new GameObject(plan.name).AddComponent<EnemyGroup>();
+        gp.minSize = Mathf.Min(groupMinSize, plan.members.Length);
+        gp.loneWolfChance = plan.fixedOpening ? 0f : loneWolfChance;
         gp.tacticalGroupChance = tacticalGroupChance;
+        gp.randomizeTactic = false;
+        gp.tactic = plan.tactic;
         gp.groupMergeRadius = groupMergeRadius;
-        gp.expected = commons + (tank ? 1 : 0);
-        float hunterChance = Mathf.Min(hunterBaseChance + hunterChancePerRound * round, hunterChanceCap);
+        gp.expected = plan.members.Length;
 
         for (int i = 0; i < gp.expected; i++)
         {
             if (lost) yield break;
-            bool isTank = tank && i == gp.expected - 1;   // o Tank chega por último
-            var pers = (!isTank && Random.value < hunterChance) ? Personality.Hunter : Personality.Objective;
-            float r = Random.value;
-            float brav = isTank ? 1f : (r < 0.4f ? 1f : (r < 0.75f ? 0.5f : 0.2f));
-            if (!isTank && brav >= 0.99f && varyFanaticBraveryForTesting)
-                brav = Random.Range(1f, 1.2f);
-            SpawnEnemy(gp, cell, isTank ? EnemyType.Tank : EnemyType.Common, pers, brav);
+            SpawnEnemy(gp, cell, plan.members[i]);
             yield return new WaitForSeconds(spawnInterval);
         }
     }
 
-    void SpawnEnemy(EnemyGroup gp, Vector2Int cell, EnemyType type, Personality pers, float brav)
+    void SpawnEnemy(EnemyGroup gp, Vector2Int cell, NightEnemySpec spec)
     {
+        EnemyType type = spec.type;
+        Personality pers = spec.personality;
         PrimitiveType shape = type == EnemyType.Tank ? PrimitiveType.Cylinder
                             : (pers == Personality.Hunter ? PrimitiveType.Cube : PrimitiveType.Sphere);
-        var balance = type == EnemyType.Tank ? tankEnemy : commonEnemy;
+        var balance = spec.archetype != null ? spec.archetype.balance : type == EnemyType.Tank ? tankEnemy : commonEnemy;
         Vector3 scale = balance.scale;
         float y = scale.y * 0.5f;
 
@@ -1176,10 +1209,15 @@ public class Game : MonoBehaviour
         go.layer = LayerMask.NameToLayer("Enemies");
         go.AddComponent<Health>();
         var e = go.AddComponent<Enemy>();
-        e.Init(type, pers, brav, gp);
+        e.Init(type, pers, spec.bravery, gp);
+        e.archetype = spec.archetype;
         e.ApplyBalance(balance);
+        e.socialProfile.randomizeOnSpawn = false;
+        e.socialProfile.temperament = spec.temperament;
+        e.socialProfile.behavior = spec.behavior;
         gp.Add(e);
         gp.ApplySocialProfile(e);
+        SpawnedThisNight++;
         RaiseGameplayEvent(GameplayEventType.EnemySpawned, go, 0f, $"Surgiu {type} ({pers})");
     }
 
@@ -1187,8 +1225,9 @@ public class Game : MonoBehaviour
     static string CostText(BuildingData d)
     {
         var parts = new List<string>();
-        if (d.woodCost > 0) parts.Add("Madeira " + d.woodCost);
-        if (d.suppliesCost > 0) parts.Add("Supr. " + d.suppliesCost);
+        if (d.costs != null)
+            foreach (var cost in d.costs)
+                if (cost.resource != null && cost.amount > 0) parts.Add(cost.resource.displayName + " " + cost.amount);
         return parts.Count > 0 ? string.Join("  ", parts) : "Grátis";
     }
 
@@ -1226,6 +1265,7 @@ public class Game : MonoBehaviour
 
     void OnGUI()
     {
+        if (IsOnExpedition || expeditionTransition) { DrawExpeditionUI(); return; }
         var st = new GUIStyle(GUI.skin.label) { fontSize = 16 };
         st.normal.textColor = Color.white;
         bool showConstructionUI = !night && !combatCameraMode;
@@ -1240,25 +1280,27 @@ public class Game : MonoBehaviour
         if (sceneDrivenLayout && showConstructionUI) DrawStructureLabels();
 
         float coreHp = core != null ? core.health.current : 0f;
-        int displayedRound = night || lost ? round : round + 1;
         GUI.Label(new Rect(10, 8, 1400, 26),
-            $"Rodada {displayedRound}   {(night ? "NOITE" : "DIA")}   Madeira: {wallet.Wood}   Suprimentos: {wallet.Supplies}   Core: {coreHp:0}   Jogador: {(PlayerVitals.I != null ? Mathf.Max(0f, PlayerVitals.I.Health.current) : 0f):0}   Abates: {killed}   Desertores: {deserted}", st);
+            $"Dia {Day}   {(night ? $"NOITE • Leva {CurrentWave}/{TotalWaves}" : "MANHÃ")}   {DefaultResources.Wood.displayName}: {wallet.Wood}   {DefaultResources.Crystals.displayName}: {wallet.Crystals}   Core: {coreHp:0}   Jogador: {(PlayerVitals.I != null ? Mathf.Max(0f, PlayerVitals.I.Health.current) : 0f):0}   Abates: {killed}   Desertores: {deserted}", st);
 
         GUI.Label(new Rect(10, 32, 1400, 26), night
             ? modeHint + (combatCameraMode
-                ? "  |  WASD: mover jogador  |  Sobreviva à noite..."
+                ? "  |  WASD: mover jogador  |  E: interagir  |  Sobreviva à noite..."
                 : "  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar")
             : combatCameraMode
-                ? modeHint + "  |  WASD: mover jogador  |  Espaço: iniciar noite"
+                ? modeHint + "  |  WASD: mover jogador  |  E: interagir  |  Espaço: iniciar noite"
             : sceneDrivenLayout
-                ? modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD/borda: mover, roda: zoom, botão do meio: arrastar"
-                : modeHint + "  |  Clique esq.: construir  |  Clique dir.: vender  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar  |  [F1] cenário  |  [F3] eventos", st);
+                ? modeHint + "  |  Clique: selecionar / construir  |  Dir./0/Esc: mão vazia  |  Q/E: girar  |  [1-9] escolher  |  [Espaço] noite  |  WASD: câmera"
+                : modeHint + "  |  Clique: selecionar / construir  |  Dir./0/Esc: mão vazia  |  [1-9] escolher  |  [Espaço] noite  |  [R] reiniciar", st);
         GUI.Label(new Rect(10, 56, 1400, 26), msg, st);
+        if (night)
+            GUI.Label(new Rect(10, 82, 1100, 24),
+                $"Inimigos surgidos: {SpawnedThisNight}/{PlannedNightEnemies} • Mínimo do bloco: {CurrentNightMinimum} • Recorde de noite vencida no bloco: {(nightPopulation != null ? nightPopulation.PeakForBlock(round) : 0)}", st);
         if (sceneDrivenLayout && showConstructionUI && buildArea != null)
         {
             GUI.Label(new Rect(10, 82, 510, 24), $"Área: {buildArea.Radius:0} m ({buildArea.expansionLevel}/{buildArea.maxExpansionLevel})  |  Verde: atual, amarelo: próxima expansão", st);
             if (!night && buildArea.CanExpand && GUI.Button(new Rect(10, 108, 230, 30),
-                    $"Expandir área ({buildArea.NextWoodCost} M / {buildArea.NextSuppliesCost} S)"))
+                    $"Expandir área ({buildArea.NextWoodCost} M / {buildArea.NextCrystalsCost} C)"))
             {
                 if (buildArea.TryExpand(wallet)) Say("A área de construção foi expandida.");
                 else Say("Recursos insuficientes para expandir a área.");
@@ -1330,7 +1372,7 @@ public class Game : MonoBehaviour
             int buildingIndex = VisibleMenuStart + i;
             var d = activeMenu[buildingIndex];
             var r = CardRect(i);
-            bool afford = wallet.CanAfford(d.woodCost, d.suppliesCost);
+            bool afford = wallet.CanAfford(d.costs);
 
             GUI.color = buildingIndex == selected ? new Color(0.22f, 0.42f, 0.28f, 0.95f) : new Color(0.1f, 0.1f, 0.13f, 0.88f);
             GUI.DrawTexture(r, Texture2D.whiteTexture);
@@ -1345,10 +1387,9 @@ public class Game : MonoBehaviour
             GUI.Label(new Rect(r.x + 22, r.y + 24, r.width - 26, 18), CostText(d), smallSt);
 
             smallSt.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
-            string extra = d.kind == StructureKind.Tower
+            string extra = d.kind == BuildingKind.Tower
                 ? $"Vida {d.maxHealth:0}  Dano {d.towerDamage:0}  Alcance {d.towerRange:0}"
-                : d.amount > 0 ? $"+{d.amount} {(d.produces == ResourceType.Wood ? "Madeira" : "Supr.")} / {d.cycleSeconds:0}s"
-                               : $"Vida {d.maxHealth:0}";
+                : $"Vida {d.maxHealth:0}";
             GUI.Label(new Rect(r.x + 22, r.y + 42, r.width - 26, 18), extra, smallSt);
         }
 
@@ -1367,12 +1408,16 @@ public class Game : MonoBehaviour
         GUI.Label(new Rect(10, Screen.height - 30, 1600, 26),
             "Vermelho = Fanático   Laranja = Cobiçoso   Rosa = Covarde   Cinza = desertor", st);
 
+        DrawInteractionUI();
         if (lost)
         {
             var big = new GUIStyle(GUI.skin.label) { fontSize = 36, alignment = TextAnchor.MiddleCenter };
             big.normal.textColor = Color.white;
             GUI.Label(new Rect(0, Screen.height / 2f - 60, Screen.width, 120),
                 $"DERROTA — {defeatReason}\n[R] reiniciar", big);
+            if (Application.CanStreamedLevelBeLoaded("MenuPrincipal") &&
+                GUI.Button(new Rect(Screen.width / 2f - 120f, Screen.height / 2f + 75f, 240f, 40f), "Voltar ao menu principal"))
+                SceneManager.LoadScene("MenuPrincipal");
         }
     }
 }

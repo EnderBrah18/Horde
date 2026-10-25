@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35e044a8f28a4609b07b0dd4678e439d, type: 3}
+  m_Name: RotaDaMata
+  m_EditorClassIdentifier: Assembly-CSharp::ExpeditionData
+  displayName: "Passagem da Mata"
+  description: "Uma passagem leva a uma mata com madeira, pedra, ferro e alimentos. Colete recursos e retorne ao marcador amarelo para entregar a carga."
+  discoveryMessage: "Uma mensagem de um sobrevivente chegou: encontramos uma velha passagem para uma mata com madeira, pedras e provisões. O caminho foi marcado no posto de expedições."
+  discoveryDay: 2
+  sceneName: Expedicoes
+  testRegionSize: 31
+  groundColor: {r: 0.25, g: 0.35, b: 0.2, a: 1}
+  seed: 12345
+  varySeedPerVisit: 1
+  cargoCapacity: 100
+  explorationCameraZoom: 18
+  resourceNodes:
+  - {fileID: 11400000, guid: 0930b2ed73e84522a2252d43f79b49e5, type: 2}
+  - {fileID: 11400000, guid: e26870d033cf42498f2f1bae63e21ac1, type: 2}
+  - {fileID: 11400000, guid: ddcf0499a8f249f782c52d097ffc9fc5, type: 2}
+  - {fileID: 11400000, guid: 41e864aabd2543b7b440120bc8baa7b6, type: 2}

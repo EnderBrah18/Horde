@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Village/Playtest Scenario", fileName = "NewPlaytestScenario")]
 public class PlaytestScenario : ScriptableObject
@@ -25,13 +26,16 @@ public class PlaytestScenario : ScriptableObject
 
     [Header("Economia e núcleo")]
     [Min(0)] public int startWood = 60;
-    [Min(0)] public int startSupplies = 6;
+    [FormerlySerializedAs("startSupplies")]
+    [Min(0)] public int startCrystals = 6;
     [Min(1f)] public float coreHealth = 300f;
 
     [Header("Ondas")]
-    [Min(0)] public int initialGroups = 1;
-    [Min(1)] public int groupsPerRounds = 2;
-    [Min(1)] public int maxGroups = 4;
+    [FormerlySerializedAs("initialGroups"), Min(1)] public int groupsPerWave = 3;
+    [Min(1)] public int initialWaves = 3;
+    [FormerlySerializedAs("groupsPerRounds"), Min(1)] public int nightsPerExtraWave = 2;
+    [FormerlySerializedAs("maxGroups"), Min(1)] public int maxWaves = 5;
+    [Min(0f)] public float waveInterval = 5f;
     [Min(0)] public int baseCommonEnemies = 4;
     [Min(0)] public int commonsPerRound = 1;
     [Min(1)] public int tankEveryRounds = 2;
@@ -46,6 +50,7 @@ public class PlaytestScenario : ScriptableObject
     public EnemyBalanceSettings tankEnemy = new EnemyBalanceSettings
     {
         maxHealth = 140f,
+        knockbackResistance = 0.8f,
         speed = 2.2f,
         damage = 14f,
         tacticRadius = 100f,
@@ -83,11 +88,13 @@ public class PlaytestScenario : ScriptableObject
         game.buildGridHeight = buildGridHeight;
         game.buildGridOffset = buildGridOffset;
         game.startWood = startWood;
-        game.startSupplies = startSupplies;
+        game.startCrystals = startCrystals;
         game.coreHealth = coreHealth;
-        game.initialGroups = initialGroups;
-        game.groupsPerRounds = groupsPerRounds;
-        game.maxGroups = maxGroups;
+        game.groupsPerWave = groupsPerWave;
+        game.initialWaves = initialWaves;
+        game.waveInterval = waveInterval;
+        game.nightsPerExtraWave = nightsPerExtraWave;
+        game.maxWaves = maxWaves;
         game.baseCommonEnemies = baseCommonEnemies;
         game.commonsPerRound = commonsPerRound;
         game.tankEveryRounds = tankEveryRounds;
@@ -115,6 +122,7 @@ public class PlaytestScenario : ScriptableObject
             attackCooldown = source.attackCooldown,
             attackRange = source.attackRange,
             tacticRadius = source.tacticRadius,
+            knockbackResistance = source.knockbackResistance,
             scale = source.scale
         };
     }
