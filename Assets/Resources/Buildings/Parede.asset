@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
+  m_Name: "Parede"
+  m_EditorClassIdentifier: "Assembly-CSharp::BuildingData"
+  displayName: "Cerca"
+  description: "Barreira destrutível. Custa recursos por trecho; inimigos podem abrir passagem."
+  order: 1
+  showInBuildMenu: 1
+  upgrade: {fileID: 11400000, guid: e0726fffa82d4d7b92f8b94eb15e0f35, type: 2}
+  kind: 0
+  menuCategory: 1
+  shape: 3
+  color: {r: 0.42, g: 0.24, b: 0.1, a: 1}
+  size: {x: 2.4, y: 1.2, z: 0.4}
+  costs:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 8
+  - resource: {fileID: 11400000, guid: ad00b117ad6a486b94f52fcd7fcf48b4, type: 2}
+    amount: 2
+  requiresSpecialBuildPoint: 0
+  specialBuildPointId: ""
+  maxHealth: 140
+  towerRange: 0
+  towerDamage: 0
+  towerCooldown: 1

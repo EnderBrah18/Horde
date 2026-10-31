@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
+  m_Name: "CercaReforcada"
+  m_EditorClassIdentifier: "Assembly-CSharp::BuildingData"
+  displayName: "Cerca reforçada"
+  description: "Barreira destrutível. Custa recursos por trecho; inimigos podem abrir passagem."
+  order: 2
+  showInBuildMenu: 0
+  upgrade: {fileID: 0}
+  kind: 0
+  menuCategory: 1
+  shape: 3
+  color: {r: 0.42, g: 0.24, b: 0.1, a: 1}
+  size: {x: 2.4, y: 1.2, z: 0.4}
+  costs:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 8
+  - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+    amount: 6
+  - resource: {fileID: 11400000, guid: 99d9d5d1ded24c1297f66aa0165a2b0e, type: 2}
+    amount: 2
+  requiresSpecialBuildPoint: 0
+  specialBuildPointId: ""
+  maxHealth: 220
+  towerRange: 0
+  towerDamage: 0
+  towerCooldown: 1

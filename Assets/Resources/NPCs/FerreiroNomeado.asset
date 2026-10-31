@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b9e37794e174da49de4b9bef4c0d58e, type: 3}
+  m_Name: FerreiroNomeado
+  m_EditorClassIdentifier: Assembly-CSharp::NpcData
+  displayName: "Artur, o Ferreiro"
+  description: "Nome provisório editável. Especialista nomeado da ferraria."
+  portrait: {fileID: 0}
+  prefab: {fileID: 0}
+  category: 1
+  unique: 1
+  maxHealth: 50
+  moveSpeed: 3
+  placeholderColor: {r: 0.3, g: 0.7, b: 0.8, a: 1}
+  recruitmentCosts:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 12
+  - resource: {fileID: 11400000, guid: 84689ec880e54eb98503a841ac4c12f5, type: 2}
+    amount: 8
+  - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
+    amount: 3
+  recoveryCosts:
+  - resource: {fileID: 11400000, guid: 84689ec880e54eb98503a841ac4c12f5, type: 2}
+    amount: 4
+  - resource: {fileID: 11400000, guid: f9b1a142d89b421d88d0094a8ad56d2c, type: 2}
+    amount: 3
+  - resource: {fileID: 11400000, guid: af68e31b28ae4f0b894c70758e420a69, type: 2}
+    amount: 1
+  allowedRoles:
+  - {fileID: 11400000, guid: 2dcdacdbe4964ad98ce25a6880a0aca6, type: 2}

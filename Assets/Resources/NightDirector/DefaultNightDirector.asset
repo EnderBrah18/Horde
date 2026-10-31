@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceeaa7d8fa844112bf1f5df42fc7b6b0, type: 3}
+  m_Name: DefaultNightDirector
+  m_EditorClassIdentifier: Assembly-CSharp::NightDirectorData
+  firstNightSeed: 1337
+  repeatMinimumChance: 0.45
+  minimumExtraEnemies: 15
+  minimumIncreasePercent: 35
+  maximumIncreasePercent: 60
+  extraEnemyBatchSize: 5
+  singleAssaultChance: 0.05
+  concentratedWaveChance: 0.35
+  minimumDominantShare: 0.55
+  maximumDominantShare: 0.8
+  dispersedGroupWeight: 1.3
+  balancedGroupWeight: 1.6
+  armyGroupWeight: 0.5
+  armyWeightPerNight: 0.08
+  maximumGroupSpawnDuration: 2
+  healthIncreasePerNight: 0.06
+  maximumHealthMultiplier: 1.7
+  damageIncreasePerNight: 0.035
+  maximumDamageMultiplier: 1.4
+  speedIncreasePerNight: 0
+  maximumSpeedMultiplier: 1
+  attackRateIncreasePerNight: 0.005
+  maximumAttackRateMultiplier: 1.1
+  groupCompositions:
+  - fileID: 11400000
+    guid: 26c7b1dbad434620a8c31bc5fc3ce426
+    type: 2
+  - fileID: 11400000
+    guid: 6819de9823cc4c349739165b4d55af0f
+    type: 2
+  - fileID: 11400000
+    guid: caf56c13aa334b2abbf1ecc12d3d57b9
+    type: 2
+  - fileID: 11400000
+    guid: 4cf008cf65ca447ca9b15d2064e437c5
+    type: 2
+  - fileID: 11400000
+    guid: fc036e5c3b8841dabdbbad69560a91dc
+    type: 2
+  - fileID: 11400000
+    guid: 23cebc5e02f84e008908626d854c0772
+    type: 2
+  - fileID: 11400000
+    guid: 5dd5ba5f1aaa43c3bffad6b1785b4094
+    type: 2
+  - fileID: 11400000
+    guid: 7b9ddabb234549d9bab6ead9f3052ac1
+    type: 2

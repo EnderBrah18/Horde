@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f2bf1c2276a97243ac3547d00123aba, type: 3}
+  m_Name: "TorreSentinelaReforcada"
+  m_EditorClassIdentifier: "Assembly-CSharp::BuildingData"
+  displayName: "Sentinela reforçada"
+  description: "Cadência rápida e alcance curto para defender acessos."
+  order: 31
+  showInBuildMenu: 0
+  upgrade: {fileID: 0}
+  kind: 1
+  menuCategory: 2
+  shape: 2
+  color: {r: 0.15, g: 0.65, b: 0.75, a: 1}
+  size: {x: 1.6, y: 2.0, z: 1.6}
+  costs:
+  - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+    amount: 18
+  - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+    amount: 20
+  - resource: {fileID: 11400000, guid: 99d9d5d1ded24c1297f66aa0165a2b0e, type: 2}
+    amount: 12
+  - resource: {fileID: 11400000, guid: f6b7300b2e3242dfbdc39211c9dca28b, type: 2}
+    amount: 4
+  requiresSpecialBuildPoint: 0
+  specialBuildPointId: ""
+  maxHealth: 340
+  towerRange: 11
+  towerDamage: 10
+  towerCooldown: 0.65

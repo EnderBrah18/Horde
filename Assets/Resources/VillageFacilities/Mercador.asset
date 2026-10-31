@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49009e213cc64ab9b75433f86a9877d7, type: 3}
+  m_Name: "Mercador"
+  m_EditorClassIdentifier: "Assembly-CSharp::VillageFacilityData"
+  displayName: "Mercador"
+  description: "Instalação de serviço. Serviços e receitas continuam aguardando integração à lore; não produz recursos automaticamente."
+  icon: {fileID: 0}
+  kind: 1
+  maxHealth: 300
+  levels:
+  - displayName: "Nível 1"
+    costs:
+    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 24
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 12
+    productionPerNight: []
+    minimumWorkers: 2
+    maximumWorkers: 6
+    extraWorkersPerBonus: 2
+    productionBonusPerGroup: 1
+    repairCosts:
+    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 8
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 3
+    npcCapacity: 0
+  - displayName: "Nível 2"
+    costs:
+    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 36
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 20
+    productionPerNight: []
+    minimumWorkers: 2
+    maximumWorkers: 8
+    extraWorkersPerBonus: 2
+    productionBonusPerGroup: 1
+    repairCosts:
+    - resource: {fileID: 11400000, guid: 01c23afbb6e443a9bb8c2593204edc7f, type: 2}
+      amount: 12
+    - resource: {fileID: 11400000, guid: bef82ad6eadf45daadca631aceec2dd6, type: 2}
+      amount: 5
+    npcCapacity: 0
