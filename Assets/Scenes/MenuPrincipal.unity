@@ -4550,6 +4550,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenu
   gameplayScene: CenaPrincipal
+  flashGrowthDuration: 1.6
+  whiteHoldDuration: 0.35
+  fadeToBlackDuration: 0.8
+  blackHoldDuration: 0.6
+  revealSceneDuration: 1.4
   home: {fileID: 816144084}
   options: {fileID: 345327515}
   controls: {fileID: 564132225}

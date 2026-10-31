@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -11,6 +10,12 @@ using UnityEngine.UI;
 public sealed class MainMenu : MonoBehaviour
 {
     public string gameplayScene = "CenaPrincipal";
+    [Header("Clarão de início da partida")]
+    [Min(0)] public float flashGrowthDuration = 1.6f;
+    [Min(0)] public float whiteHoldDuration = .35f;
+    [Min(0)] public float fadeToBlackDuration = .8f;
+    [Min(0)] public float blackHoldDuration = .6f;
+    [Min(0)] public float revealSceneDuration = 1.4f;
     [Header("Telas do Canvas")]
     public GameObject home, options, controls, credits, quit;
     public TMP_Text status;
@@ -122,21 +127,21 @@ public sealed class MainMenu : MonoBehaviour
         Show(home);
     }
 
-    public void BeginRun() { if (!loading) StartCoroutine(StartRun()); }
-    IEnumerator StartRun()
+    public void BeginRun()
     {
+        if (loading || WhiteFlashTransition.IsPlaying) return;
         if (!Application.CanStreamedLevelBeLoaded(gameplayScene))
-        { status.text = "A cena da vila não está incluída na build."; yield break; }
+        { status.text = "A cena da vila não está incluída na build."; return; }
         loading = true;
         foreach (var selectable in GetComponentsInChildren<Selectable>(true)) selectable.interactable = false;
-        status.text = "Preparando a vila…";
-        AsyncOperation operation = null;
-        try { operation = SceneManager.LoadSceneAsync(gameplayScene, LoadSceneMode.Single); }
-        catch (System.Exception error) { Debug.LogException(error); }
-        if (operation != null) { yield return operation; yield break; }
-        loading = false;
-        foreach (var selectable in GetComponentsInChildren<Selectable>(true)) selectable.interactable = true;
-        status.text = "Não foi possível iniciar a partida. Tente novamente.";
+        status.text = "";
+        WhiteFlashTransition.Begin(gameplayScene, flashGrowthDuration, whiteHoldDuration,
+            fadeToBlackDuration, blackHoldDuration, revealSceneDuration, message => {
+                if (this == null) return;
+                loading = false;
+                foreach (var selectable in GetComponentsInChildren<Selectable>(true)) selectable.interactable = true;
+                status.text = message;
+            });
     }
 
     void Exit()

@@ -29,7 +29,7 @@ public partial class Game : MonoBehaviour
     [Min(1f)] public float cameraEdgeSize = 28f;
     [Tooltip("Opcional. Se vazio, o modo combate procura um objeto com a tag Player.")]
     public Transform combatCameraTarget;
-    public bool PlayerControlEnabled => combatCameraMode && !lost && !expeditionTransition && !IsPlayerRespawning &&
+    public bool PlayerControlEnabled => !WhiteFlashTransition.IsPlaying && combatCameraMode && !lost && !expeditionTransition && !IsPlayerRespawning &&
         PlayerVitals.I != null && PlayerVitals.I.IsAlive;
     [Min(0.1f)] public float combatCameraFollowSpeed = 8f;
     [Min(1f)] public float buildCameraZoomSpeed = 10f;
@@ -535,6 +535,7 @@ public partial class Game : MonoBehaviour
     // ---------- Loop ----------
     void Update()
     {
+        if (WhiteFlashTransition.IsPlaying) return;
         FlushDeferredCargo();
         var kb = Keyboard.current;
         var mouse = Mouse.current;
@@ -601,6 +602,7 @@ public partial class Game : MonoBehaviour
 
     void LateUpdate()
     {
+        if (WhiteFlashTransition.IsPlaying) return;
         if (!lost && Mouse.current != null) UpdateCameraPan(Mouse.current);
     }
 
@@ -1068,6 +1070,7 @@ public partial class Game : MonoBehaviour
 
     void OnGUI()
     {
+        if (WhiteFlashTransition.IsPlaying) return;
         if (IsOnExpedition || expeditionTransition) { DrawExpeditionUI(); return; }
         var st = new GUIStyle(GUI.skin.label) { fontSize = 16 };
         st.normal.textColor = Color.white;
